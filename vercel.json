@@ -1,0 +1,20 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/psuministro",
+            "destination": "https://cima.aemps.es/cima/rest/psuministro"
+        },
+        {
+            "source": "/api/psuministro(.*)",
+            "destination": "https://cima.aemps.es/cima/rest/psuministro$1"
+        },
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/$1"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}

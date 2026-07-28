@@ -1,0 +1,255 @@
+import { useState, useCallback } from 'react';
+import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save } from 'lucide-react';
+import { saveClasificacion } from '../../services/blistercheckService';
+
+// ── Componente tristate: Sí / No / Sin clasificar ────────────────────────────
+function TristateToggle({ label, descripcion, value, onChange }) {
+  const opciones = [
+    { val: true,  label: 'Sí',  cls: 'tristate--yes',     icon: <CheckCircle size={14} /> },
+    { val: false, label: 'No',  cls: 'tristate--no',      icon: <XCircle size={14} /> },
+    { val: null,  label: '—',   cls: 'tristate--neutral', icon: <Circle size={14} /> },
+  ];
+
+  return (
+    <div className="bc-tristate-row">
+      <div className="bc-tristate-info">
+        <span className="bc-tristate-label">{label}</span>
+        {descripcion && <span className="bc-tristate-desc">{descripcion}</span>}
+      </div>
+      <div className="bc-tristate-btns">
+        {opciones.map(op => (
+          <button
+            key={String(op.val)}
+            className={`bc-tristate-btn ${op.cls} ${value === op.val ? 'selected' : ''}`}
+            onClick={() => onChange(op.val)}
+          >
+            {op.icon}
+            {op.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardada, onVolver }) {
+  const [form, setForm] = useState({
+    requiere_reenvasado:   clasificacion?.requiere_reenvasado   ?? null,
+    requiere_reetiquetado: clasificacion?.requiere_reetiquetado ?? null,
+    apto_sdmdu_blister:    clasificacion?.apto_sdmdu_blister    ?? null,
+    en_mi_farmacia:        clasificacion?.en_mi_farmacia        ?? false,
+    notas:                 clasificacion?.notas                 ?? '',
+  });
+
+  const [saving, setSaving] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
+
+  // Actualizar form cuando cambia la clasificación (cargada asíncronamente)
+  useState(() => {
+    if (clasificacion) {
+      setForm({
+        requiere_reenvasado:   clasificacion.requiere_reenvasado   ?? null,
+        requiere_reetiquetado: clasificacion.requiere_reetiquetado ?? null,
+        apto_sdmdu_blister:    clasificacion.apto_sdmdu_blister    ?? null,
+        en_mi_farmacia:        clasificacion.en_mi_farmacia        ?? false,
+        notas:                 clasificacion.notas                 ?? '',
+      });
+    }
+  }, [clasificacion]);
+
+  const handleChange = useCallback((campo, valor) => {
+    setForm(prev => ({ ...prev, [campo]: valor }));
+    setSavedOk(false);
+  }, []);
+
+  const handleGuardar = useCallback(async () => {
+    setSaving(true);
+    try {
+      await saveClasificacion(medicamento.nregistro, form);
+      setSavedOk(true);
+      onClasificacionGuardada({ nregistro: medicamento.nregistro, ...form });
+      setTimeout(() => setSavedOk(false), 2000);
+    } catch (err) {
+      console.error('Error guardando clasificación:', err);
+      alert('Error al guardar. Por favor, inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
+    }
+  }, [medicamento.nregistro, form, onClasificacionGuardada]);
+
+  const fotoEnvase = medicamento.foto_envase_url;
+  const fotoForma = medicamento.foto_forma_url;
+
+  // Determinar si es candidato SDMDU por forma farmacéutica
+  const esCandidatoSDMDU = ['COMPRIMIDO', 'CAPSULA'].some(f =>
+    (medicamento.forma_simplificada || '').toUpperCase().includes(f)
+  );
+
+  return (
+    <div className="bc-detalle">
+      {/* Botón volver */}
+      <button className="bc-detalle-back" onClick={onVolver}>
+        <ArrowLeft size={16} /> Volver a resultados
+      </button>
+
+      <div className="bc-detalle-layout">
+        {/* ── Columna izquierda: datos del medicamento ── */}
+        <div className="bc-detalle-info glass-panel">
+          {/* Imágenes */}
+          {(fotoEnvase || fotoForma) && (
+            <div className="bc-detalle-fotos">
+              {fotoEnvase && (
+                <div className="bc-foto-wrapper">
+                  <img src={fotoEnvase} alt="Envase del medicamento" className="bc-foto-envase" loading="lazy" />
+                  <span className="bc-foto-caption">Envase</span>
+                </div>
+              )}
+              {fotoForma && (
+                <div className="bc-foto-wrapper">
+                  <img src={fotoForma} alt="Forma farmacéutica" className="bc-foto-forma" loading="lazy" />
+                  <span className="bc-foto-caption">Forma farmacéutica</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Nombre */}
+          <h2 className="bc-detalle-nombre">{medicamento.nombre}</h2>
+
+          {esCandidatoSDMDU && (
+            <div className="bc-candidate-hint">
+              💊 Candidato para SDMDU por forma farmacéutica
+            </div>
+          )}
+
+          {/* Datos */}
+          <div className="bc-detalle-datos">
+            <DataRow label="Nº Registro" value={medicamento.nregistro} mono />
+            {medicamento.cn && <DataRow label="Cód. Nacional" value={medicamento.cn} mono />}
+            <DataRow label="Laboratorio" value={medicamento.laboratorio} />
+            <DataRow label="Dosis" value={medicamento.dosis} />
+            <DataRow label="Principio activo" value={medicamento.principio_activo} />
+            <DataRow label="Forma farmacéutica" value={medicamento.forma_farmaceutica} />
+            <DataRow label="Forma simplificada" value={medicamento.forma_simplificada} />
+            <DataRow label="Vía de administración" value={medicamento.via_administracion} />
+            <DataRow label="Tipo de prescripción" value={medicamento.tipo_prescripcion} />
+          </div>
+
+          {/* Links a documentación */}
+          <div className="bc-detalle-docs">
+            {medicamento.url_ficha_tecnica && (
+              <a href={medicamento.url_ficha_tecnica} target="_blank" rel="noopener noreferrer" className="bc-doc-link">
+                <FileText size={15} /> Ficha Técnica
+                <ExternalLink size={12} />
+              </a>
+            )}
+            {medicamento.url_prospecto && (
+              <a href={medicamento.url_prospecto} target="_blank" rel="noopener noreferrer" className="bc-doc-link">
+                <BookOpen size={15} /> Prospecto
+                <ExternalLink size={12} />
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* ── Columna derecha: panel de clasificación ── */}
+        <div className="bc-detalle-clasificacion glass-panel">
+          <div className="bc-clas-header">
+            <div className="bc-clas-icon-wrap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <polyline points="9 12 11 14 15 10"/>
+              </svg>
+            </div>
+            <h3 className="bc-clas-title">Clasificación BlisterCheck</h3>
+          </div>
+
+          <div className="bc-clas-body">
+            <TristateToggle
+              label="Requiere Reenvasado"
+              descripcion="El envase original no es apto para dosis unitaria y debe ser reenvasado"
+              value={form.requiere_reenvasado}
+              onChange={v => handleChange('requiere_reenvasado', v)}
+            />
+
+            <TristateToggle
+              label="Requiere Reetiquetado"
+              descripcion="Necesita etiqueta adicional con nombre, lote o caducidad"
+              value={form.requiere_reetiquetado}
+              onChange={v => handleChange('requiere_reetiquetado', v)}
+            />
+
+            <TristateToggle
+              label="Apto SDMDU (blíster OK)"
+              descripcion="Blíster fraccionable correctamente identificado: nombre, lote y caducidad visibles"
+              value={form.apto_sdmdu_blister}
+              onChange={v => handleChange('apto_sdmdu_blister', v)}
+            />
+
+            {/* Separador */}
+            <hr className="bc-clas-divider" />
+
+            {/* Mi farmacia */}
+            <label className="bc-farmacia-toggle">
+              <div className="bc-farmacia-info">
+                <Home size={16} className="bc-farmacia-icon" />
+                <div>
+                  <span className="bc-farmacia-label">En mi farmacia</span>
+                  <span className="bc-farmacia-desc">Usamos este medicamento en nuestra farmacia</span>
+                </div>
+              </div>
+              <div
+                className={`bc-toggle-switch ${form.en_mi_farmacia ? 'on' : ''}`}
+                onClick={() => handleChange('en_mi_farmacia', !form.en_mi_farmacia)}
+              >
+                <div className="bc-toggle-thumb" />
+              </div>
+            </label>
+
+            {/* Separador */}
+            <hr className="bc-clas-divider" />
+
+            {/* Notas */}
+            <div className="bc-notas-section">
+              <label className="bc-notas-label">📝 Notas</label>
+              <textarea
+                className="bc-notas-input"
+                placeholder="Observaciones, comentarios sobre el blíster, condiciones especiales..."
+                value={form.notas}
+                onChange={e => handleChange('notas', e.target.value)}
+                rows={4}
+              />
+            </div>
+
+            {/* Botón guardar */}
+            <button
+              className={`bc-guardar-btn ${savedOk ? 'saved' : ''}`}
+              onClick={handleGuardar}
+              disabled={saving}
+            >
+              {saving ? (
+                <><div className="bc-mini-spinner" /> Guardando...</>
+              ) : savedOk ? (
+                <><CheckCircle size={16} /> ¡Guardado!</>
+              ) : (
+                <><Save size={16} /> Guardar clasificación</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DataRow({ label, value, mono }) {
+  if (!value) return null;
+  return (
+    <div className="bc-data-row">
+      <span className="bc-data-label">{label}</span>
+      <span className={`bc-data-value ${mono ? 'mono' : ''}`}>{value}</span>
+    </div>
+  );
+}
+
+export default MedicamentoDetalle;
