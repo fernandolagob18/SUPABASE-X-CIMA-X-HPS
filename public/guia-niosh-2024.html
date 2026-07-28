@@ -45,7 +45,7 @@
         .container { max-width: 1152px; margin: 0 auto; padding: 0 1rem; width: 100%; }
         
         /* Cabecera */
-        header { background-color: var(--blue-900); color: var(--white); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 10; padding: 1.5rem 0; }
+        header { background-color: var(--blue-900); color: var(--white); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 1.25rem 0; }
         .header-content { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
         .header-title-flex { display: flex; align-items: center; gap: 0.75rem; }
         .header-title { font-size: 1.5rem; font-weight: 700; }
@@ -57,8 +57,10 @@
             font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s; 
         }
         .btn-primary:hover { background-color: var(--blue-600); }
+        .btn-back { background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 1rem; width: fit-content; }
+        .btn-back:hover { background-color: rgba(255,255,255,0.2); }
 
-        main { flex-grow: 1; padding: 2rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
+        main { flex-grow: 1; padding: 1rem 0 2rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
 
         /* Panel Info */
         .info-panel { background: var(--white); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.25rem; display: flex; flex-wrap: wrap; gap: 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -134,28 +136,46 @@
 </head>
 <body>
 
-    <header>
-        <div class="container header-content">
-            <div class="header-title-flex">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #93c5fd;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                <div>
-                    <h1 class="header-title">Guía NIOSH 2024</h1>
-                    <p class="header-subtitle">Buscador de Fármacos Peligrosos para Farmacia Hospitalaria</p>
-                    <p style="color: #93c5fd; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 500;">Herramienta desarrollada por Fernando Lago Ballester</p>
+    <!-- CONTENEDOR PEGAJOSO (Header + Buscador) -->
+    <div id="stickyContainer" style="position: sticky; top: 0; z-index: 40; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); background-color: var(--bg-body); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <header id="mainHeader">
+            <div class="container header-content" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+                <button onclick="window.parent.postMessage('volver_inicio', '*')" class="btn-primary btn-back">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    Volver al menú de inicio
+                </button>
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; width: 100%; gap: 1rem;">
+                    <div class="header-title-flex">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #93c5fd;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                        <div>
+                            <h1 class="header-title">Guía NIOSH 2024</h1>
+                            <p class="header-subtitle">Buscador de Fármacos Peligrosos</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button onclick="toggleModal('biblioModal')" class="btn-primary" style="background-color: var(--blue-900); border-color: #60a5fa;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                            Bibliografía
+                        </button>
+                        <button onclick="toggleModal('sngModal')" class="btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.4 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>
+                            Guía SNG
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                <button onclick="toggleModal('biblioModal')" class="btn-primary" style="background-color: var(--blue-900); border-color: #60a5fa;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
-                    Bibliografía
-                </button>
-                <button onclick="toggleModal('sngModal')" class="btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.4 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>
-                    Guía Administración SNG
-                </button>
+        </header>
+
+        <div class="container" style="padding-top: 1rem; padding-bottom: 1rem;">
+            <div class="search-wrapper">
+                <div class="search-icon-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar principio activo (ej. Fluorouracilo...)" autocomplete="off">
+                <div class="search-badge" id="countDisplay">Cargando...</div>
             </div>
         </div>
-    </header>
+    </div>
 
     <main class="container">
         <div class="info-panel">
@@ -180,13 +200,7 @@
             </div>
         </div>
 
-        <div class="search-wrapper">
-            <div class="search-icon-left">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </div>
-            <input type="text" id="searchInput" class="search-input" placeholder="Buscar principio activo (ej. Fluorouracilo, Abiraterona...)" autocomplete="off">
-            <div class="search-badge" id="countDisplay">Cargando...</div>
-        </div>
+
 
         <div id="resultsContainer" class="grid"></div>
 
@@ -842,7 +856,32 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const sortedDrugs = allDrugs.sort((a, b) => a.name.localeCompare(b.name));
-            renderDrugs(sortedDrugs);
+            // Inicializar renderizado
+            renderDrugs(allDrugs);
+
+            // Lógica Smart Scroll para Header (Auto-hide en móviles)
+            let lastScrollY = window.scrollY;
+            const stickyContainer = document.getElementById('stickyContainer');
+            const mainHeader = document.getElementById('mainHeader');
+
+            window.addEventListener('scroll', () => {
+                if (window.innerWidth <= 768) { // Aplicar preferentemente en pantallas pequeñas
+                    const currentScrollY = window.scrollY;
+                    const headerHeight = mainHeader.offsetHeight;
+                    
+                    if (currentScrollY > lastScrollY && currentScrollY > headerHeight) {
+                        // Scrolling down
+                        stickyContainer.style.transform = `translateY(-${headerHeight}px)`;
+                    } else {
+                        // Scrolling up
+                        stickyContainer.style.transform = 'translateY(0)';
+                    }
+                    lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
+                } else {
+                    // Reset in desktop mode if resized
+                    stickyContainer.style.transform = 'translateY(0)';
+                }
+            }, { passive: true });
         });
 
     </script>
