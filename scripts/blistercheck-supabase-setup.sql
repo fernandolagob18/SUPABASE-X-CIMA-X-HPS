@@ -55,11 +55,11 @@ ALTER TABLE blistercheck_clasificacion ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Auth read catalogo" ON blistercheck_catalogo;
 CREATE POLICY "Auth read catalogo" ON blistercheck_catalogo
-  FOR SELECT USING (auth.role() = 'authenticated');
+  FOR SELECT TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "Auth all clasificacion" ON blistercheck_clasificacion;
 CREATE POLICY "Auth all clasificacion" ON blistercheck_clasificacion
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Función para actualizar updated_at automáticamente
 CREATE OR REPLACE FUNCTION update_blistercheck_updated_at()
