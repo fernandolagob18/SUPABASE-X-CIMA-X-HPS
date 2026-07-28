@@ -2,7 +2,7 @@ import { ArrowLeft, AlertOctagon } from 'lucide-react';
 
 function NioshApp({ onVolver }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', position: 'fixed', top: 0, left: 0, zIndex: 100, backgroundColor: 'var(--bg-body, #f8fafc)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%', position: 'fixed', top: 0, left: 0, zIndex: 100, backgroundColor: 'var(--bg-body, #f8fafc)' }}>
       {/* Barra superior compartiendo estilos base del portal */}
       <div className="bc-topbar glass-panel" style={{ zIndex: 100, borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}>
         <div className="bc-topbar__left">
