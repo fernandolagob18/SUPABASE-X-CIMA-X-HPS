@@ -57,10 +57,22 @@ export async function searchSimple(query) {
  * @param {string} filtros.viaAdministracion
  */
 export async function searchAvanzado(filtros = {}) {
-  let query = supabase
-    .from(CATALOG_TABLE)
-    .select('*')
-    .order('nombre', { ascending: true });
+  let query;
+  
+  if (filtros.soloClasificados) {
+    query = supabase
+      .from(CATALOG_TABLE)
+      .select(`
+        *,
+        blistercheck_clasificacion!inner(nregistro)
+      `)
+      .order('nombre', { ascending: true });
+  } else {
+    query = supabase
+      .from(CATALOG_TABLE)
+      .select('*')
+      .order('nombre', { ascending: true });
+  }
 
   if (filtros.nombre?.trim()) {
     query = query.ilike('nombre', `%${filtros.nombre.trim()}%`);

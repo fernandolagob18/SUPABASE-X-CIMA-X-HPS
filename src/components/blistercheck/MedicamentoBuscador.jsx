@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 import MedicamentoCard from './MedicamentoCard';
 import {
@@ -26,6 +26,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     laboratorio: '',
     formaFarmaceutica: '',
     viaAdministracion: '',
+    soloClasificados: false,
   });
   const [formas, setFormas] = useState([]);
   const [vias, setVias] = useState([]);
@@ -70,15 +71,16 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   }, [query, showAvanzado]);
 
   // Ejecutar búsqueda avanzada
-  const handleBuscarAvanzado = useCallback(async () => {
-    const tieneAlgunFiltro = Object.values(filtros).some(v => v.trim() !== '');
+  const handleBuscarAvanzado = useCallback(async (filtrosOverride) => {
+    const f = filtrosOverride || filtros;
+    const tieneAlgunFiltro = Object.values(f).some(v => typeof v === 'boolean' ? v : v.trim() !== '');
     if (!tieneAlgunFiltro) return;
 
     setLoading(true);
     setError(null);
     setBuscadoAlgunaVez(true);
     try {
-      const data = await searchAvanzado(filtros);
+      const data = await searchAvanzado(f);
       setResultados(data);
     } catch (err) {
       setError('Error al buscar. Comprueba tu conexión.');
@@ -89,7 +91,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   }, [filtros]);
 
   const handleLimpiarAvanzado = () => {
-    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '' });
+    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', soloClasificados: false });
     setResultados([]);
     setBuscadoAlgunaVez(false);
   };
@@ -137,6 +139,20 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
             <SlidersHorizontal size={16} />
             {showAvanzado ? 'Búsqueda simple' : 'Búsqueda avanzada'}
             {showAvanzado ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          
+          <button
+            className="bc-avanzado-toggle"
+            style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+            onClick={() => {
+              setQuery('');
+              setShowAvanzado(true);
+              const f = { ...filtros, soloClasificados: true };
+              setFiltros(f);
+              handleBuscarAvanzado(f);
+            }}
+          >
+            <ShieldCheck size={16} /> Ver ya clasificados
           </button>
         </div>
 
@@ -199,6 +215,19 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
                 />
               </div>
 
+            </div>
+            
+            <div className="bc-filtro-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.6rem', padding: '1rem', background: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)', borderRadius: '8px', marginBottom: '1rem' }}>
+              <input
+                type="checkbox"
+                id="solo-clasificados"
+                checked={filtros.soloClasificados}
+                onChange={e => handleFiltroChange('soloClasificados', e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+              />
+              <label htmlFor="solo-clasificados" style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-text)', fontWeight: 600 }}>
+                Mostrar únicamente medicamentos que ya han sido clasificados
+              </label>
             </div>
 
             <div className="bc-avanzado-actions">
