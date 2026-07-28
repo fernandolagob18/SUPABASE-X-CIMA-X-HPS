@@ -178,26 +178,32 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
 
               <div className="bc-filtro-field">
                 <label className="bc-filtro-label">Forma farmacéutica</label>
-                <select
-                  className="bc-filtro-select"
+                <input
+                  type="text"
+                  list="formas-list"
+                  className="bc-filtro-input"
+                  placeholder="Ej: Comprimido..."
                   value={filtros.formaFarmaceutica}
                   onChange={e => handleFiltroChange('formaFarmaceutica', e.target.value)}
-                >
-                  <option value="">Todas</option>
-                  {formas.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
+                />
+                <datalist id="formas-list">
+                  {formas.map(f => <option key={f} value={f} />)}
+                </datalist>
               </div>
 
               <div className="bc-filtro-field">
                 <label className="bc-filtro-label">Vía de administración</label>
-                <select
-                  className="bc-filtro-select"
+                <input
+                  type="text"
+                  list="vias-list"
+                  className="bc-filtro-input"
+                  placeholder="Ej: Oral..."
                   value={filtros.viaAdministracion}
                   onChange={e => handleFiltroChange('viaAdministracion', e.target.value)}
-                >
-                  <option value="">Todas</option>
-                  {vias.map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
+                />
+                <datalist id="vias-list">
+                  {vias.map(v => <option key={v} value={v} />)}
+                </datalist>
               </div>
 
             </div>
