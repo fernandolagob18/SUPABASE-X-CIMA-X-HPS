@@ -22,7 +22,7 @@ function formatFecha(iso) {
 function escapeCsvField(val) {
   if (val === null || val === undefined) return '';
   const str = String(val);
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+  if (str.includes(';') || str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return str;
@@ -69,10 +69,10 @@ function generateCsv(data) {
       row.notas || '',
       formatFecha(row.fecha_clasificacion),
       formatFecha(row.updated_at),
-    ].map(escapeCsvField).join(',');
+    ].map(escapeCsvField).join(';');
   });
 
-  return [headers.join(','), ...rows].join('\n');
+  return [headers.join(';'), ...rows].join('\n');
 }
 
 function downloadCsv(content, filename) {
