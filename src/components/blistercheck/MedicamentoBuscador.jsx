@@ -72,7 +72,8 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
 
   // Ejecutar búsqueda avanzada
   const handleBuscarAvanzado = useCallback(async (filtrosOverride) => {
-    const f = filtrosOverride || filtros;
+    // Evitar que el evento onClick se pase como filtrosOverride
+    const f = (filtrosOverride && !filtrosOverride.nativeEvent && !filtrosOverride.type) ? filtrosOverride : filtros;
     const tieneAlgunFiltro = Object.values(f).some(v => typeof v === 'boolean' ? v : v.trim() !== '');
     if (!tieneAlgunFiltro) return;
 
@@ -234,7 +235,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
               <button className="bc-btn-limpiar" onClick={handleLimpiarAvanzado}>
                 <X size={15} /> Limpiar filtros
               </button>
-              <button className="bc-btn-buscar" onClick={handleBuscarAvanzado}>
+              <button className="bc-btn-buscar" onClick={() => handleBuscarAvanzado()}>
                 <Search size={15} /> Buscar
               </button>
             </div>

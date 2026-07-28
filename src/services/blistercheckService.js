@@ -99,27 +99,44 @@ export async function searchAvanzado(filtros = {}) {
 
 // ─── VALORES ÚNICOS PARA FILTROS ──────────────────────────────────────────────
 
-export async function getFormasFarmaceuticas() {
-  const { data, error } = await supabase
+async function fetchAllDistinct(column) {
+  const { count } = await supabase
     .from(CATALOG_TABLE)
-    .select('forma_farmaceutica')
-    .not('forma_farmaceutica', 'is', null)
-    .order('forma_farmaceutica');
+    .select('*', { count: 'exact', head: true });
+    
+  const total = count || 17000;
+  const limit = 1000;
+  const numPages = Math.ceil(total / limit);
+  const promises = [];
+  
+  for (let i = 0; i < numPages; i++) {
+    promises.push(
+      supabase
+        .from(CATALOG_TABLE)
+        .select(column)
+        .not(column, 'is', null)
+        .range(i * limit, (i + 1) * limit - 1)
+    );
+  }
+  
+  const results = await Promise.all(promises);
+  const uniqueVals = new Set();
+  
+  results.forEach(res => {
+    if (res.data) {
+      res.data.forEach(row => uniqueVals.add(row[column]));
+    }
+  });
+  
+  return Array.from(uniqueVals).filter(Boolean).sort((a, b) => a.localeCompare(b));
+}
 
-  if (error) throw error;
-  // Devolver valores únicos
-  return [...new Set((data || []).map(r => r.forma_farmaceutica))].filter(Boolean);
+export async function getFormasFarmaceuticas() {
+  return await fetchAllDistinct('forma_farmaceutica');
 }
 
 export async function getViasAdministracion() {
-  const { data, error } = await supabase
-    .from(CATALOG_TABLE)
-    .select('via_administracion')
-    .not('via_administracion', 'is', null)
-    .order('via_administracion');
-
-  if (error) throw error;
-  return [...new Set((data || []).map(r => r.via_administracion))].filter(Boolean);
+  return await fetchAllDistinct('via_administracion');
 }
 
 // ─── CLASIFICACIÓN ────────────────────────────────────────────────────────────
