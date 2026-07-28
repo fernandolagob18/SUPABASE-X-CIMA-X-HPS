@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save } from 'lucide-react';
 import { saveClasificacion } from '../../services/blistercheckService';
 
@@ -45,7 +45,7 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
   const [savedOk, setSavedOk] = useState(false);
 
   // Actualizar form cuando cambia la clasificación (cargada asíncronamente)
-  useState(() => {
+  useEffect(() => {
     if (clasificacion) {
       setForm({
         requiere_reenvasado:   clasificacion.requiere_reenvasado   ?? null,

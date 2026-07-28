@@ -33,12 +33,32 @@ function BlisterCheckApp({ onVolver }) {
   }, []);
 
   const handleClasificacionGuardada = useCallback((nuevaClasificacion) => {
+    const isClassified = (c) => c && (c.requiere_reenvasado !== null || c.requiere_reetiquetado !== null || c.apto_sdmdu_blister !== null);
+    
+    const eraClasificado = isClassified(clasificacionActual);
+    const ahoraClasificado = isClassified(nuevaClasificacion);
+    
+    const eraEnFarmacia = clasificacionActual?.en_mi_farmacia === true;
+    const ahoraEnFarmacia = nuevaClasificacion?.en_mi_farmacia === true;
+
     setClasificacionActual(nuevaClasificacion);
-    // Actualizar contador
-    setCatalogInfo(prev => ({
-      ...prev,
-      totalClasificados: prev.totalClasificados + (clasificacionActual ? 0 : 1),
-    }));
+
+    setCatalogInfo(prev => {
+      let nuevasClasificadas = prev.totalClasificados;
+      let nuevasEnFarmacia = prev.enMiFarmacia;
+
+      if (!eraClasificado && ahoraClasificado) nuevasClasificadas++;
+      else if (eraClasificado && !ahoraClasificado) nuevasClasificadas = Math.max(0, nuevasClasificadas - 1);
+
+      if (!eraEnFarmacia && ahoraEnFarmacia) nuevasEnFarmacia++;
+      else if (eraEnFarmacia && !ahoraEnFarmacia) nuevasEnFarmacia = Math.max(0, nuevasEnFarmacia - 1);
+
+      return {
+        ...prev,
+        totalClasificados: nuevasClasificadas,
+        enMiFarmacia: nuevasEnFarmacia,
+      };
+    });
   }, [clasificacionActual]);
 
   const handleVolverABusqueda = useCallback(() => {
