@@ -1,4 +1,4 @@
-import { Pill, ShieldCheck } from 'lucide-react';
+import { Pill, ShieldCheck, AlertOctagon } from 'lucide-react';
 
 function MainMenuScreen({ onSelectModule, onLogout, userEmail }) {
   return (
@@ -68,6 +68,31 @@ function MainMenuScreen({ onSelectModule, onLogout, userEmail }) {
                 <span className="module-tag">SDMDU</span>
                 <span className="module-tag">Blíster</span>
                 <span className="module-tag">Catálogo AEMPS</span>
+              </div>
+            </div>
+            <div className="module-card__arrow">→</div>
+          </button>
+        </div>
+
+        <div className="main-menu-grid" style={{ marginTop: '1.5rem' }}>
+          {/* Guía NIOSH 2024 */}
+          <button
+            className="module-card module-card--niosh"
+            onClick={() => onSelectModule('niosh')}
+            style={{ borderColor: 'rgba(239, 68, 68, 0.2)' }}
+          >
+            <div className="module-card__icon module-card__icon--niosh" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+              <AlertOctagon size={36} />
+            </div>
+            <div className="module-card__content">
+              <h2 className="module-card__title">Guía NIOSH 2024</h2>
+              <p className="module-card__desc">
+                Buscador de fármacos peligrosos para farmacia hospitalaria. Identifica medicamentos con Información Especial de Manejo (MSHI).
+              </p>
+              <div className="module-card__tags">
+                <span className="module-tag">Riesgo</span>
+                <span className="module-tag">Citotóxicos</span>
+                <span className="module-tag">SNG</span>
               </div>
             </div>
             <div className="module-card__arrow">→</div>

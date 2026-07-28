@@ -13,6 +13,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import LoginScreen from './components/LoginScreen';
 import MainMenuScreen from './components/MainMenuScreen';
 import BlisterCheckApp from './components/blistercheck/BlisterCheckApp';
+import NioshApp from './components/niosh/NioshApp';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -421,6 +422,15 @@ function App() {
     return (
       <ErrorBoundary>
         <BlisterCheckApp onVolver={() => setActiveModule('menu')} />
+      </ErrorBoundary>
+    );
+  }
+
+  // ── Módulo NIOSH ──
+  if (activeModule === 'niosh') {
+    return (
+      <ErrorBoundary>
+        <NioshApp onVolver={() => setActiveModule('menu')} />
       </ErrorBoundary>
     );
   }
