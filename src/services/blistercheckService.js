@@ -66,6 +66,7 @@ export async function searchAvanzado(filtros = {}) {
         *,
         blistercheck_clasificacion!inner(nregistro)
       `)
+      .or('requiere_reenvasado.not.is.null,requiere_reetiquetado.not.is.null,apto_sdmdu_blister.not.is.null', { referencedTable: 'blistercheck_clasificacion' })
       .order('nombre', { ascending: true });
   } else {
     query = supabase
@@ -212,11 +213,15 @@ export async function getEstadisticasPorLaboratorio(soloMiFarmacia = false) {
     }
 
     const entry = labMap.get(lab);
-    entry.total_clasificados++;
+
+    const sinClasificar = row.apto_sdmdu_blister === null && row.requiere_reenvasado === null && row.requiere_reetiquetado === null;
+
+    if (!sinClasificar) {
+      entry.total_clasificados++;
+    }
 
     const esApto = row.apto_sdmdu_blister === true;
     const requiereIntervencion = row.requiere_reenvasado === true || row.requiere_reetiquetado === true;
-    const sinClasificar = row.apto_sdmdu_blister === null && row.requiere_reenvasado === null && row.requiere_reetiquetado === null;
 
     if (esApto) entry.aptos_directos++;
     else if (requiereIntervencion) entry.requieren_intervencion++;
@@ -244,7 +249,8 @@ export async function getCatalogInfo() {
 
   const { count: totalClasificados } = await supabase
     .from(CLASIFICACION_TABLE)
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true })
+    .or('requiere_reenvasado.not.is.null,requiere_reetiquetado.not.is.null,apto_sdmdu_blister.not.is.null');
 
   const { count: enMiFarmacia } = await supabase
     .from(CLASIFICACION_TABLE)
@@ -290,6 +296,10 @@ export async function getExportData(modo = 'clasificados') {
       )
     `)
     .order('fecha_clasificacion', { ascending: false });
+
+  if (modo === 'clasificados') {
+    query = query.or('requiere_reenvasado.not.is.null,requiere_reetiquetado.not.is.null,apto_sdmdu_blister.not.is.null');
+  }
 
   if (modo === 'mi_farmacia') {
     query = query.eq('en_mi_farmacia', true);
