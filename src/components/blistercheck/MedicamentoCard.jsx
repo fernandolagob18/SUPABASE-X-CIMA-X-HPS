@@ -1,4 +1,4 @@
-import { CheckCircle, AlertTriangle, Circle, Home } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Circle, Home, XCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getClasificacion } from '../../services/blistercheckService';
 
@@ -33,9 +33,20 @@ function ClasificacionBadge({ clasificacion }) {
     );
   }
 
+  const sinClasificar = apto_sdmdu_blister === null && requiere_reenvasado === null && requiere_reetiquetado === null;
+
+  if (sinClasificar) {
+    return (
+      <span className="bc-badge bc-badge--pending">
+        <Circle size={11} /> Sin clasificar
+      </span>
+    );
+  }
+
+  // Si está clasificado pero no ha cumplido ninguna de las condiciones anteriores (todo es false o null)
   return (
-    <span className="bc-badge bc-badge--pending">
-      <Circle size={11} /> Sin clasificar
+    <span className="bc-badge" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}>
+      <XCircle size={11} /> No Apto SDMDU
     </span>
   );
 }
@@ -60,7 +71,8 @@ function MedicamentoCard({ medicamento, onClick }) {
       <div className={`bc-med-card__stripe ${
         clasificacion?.apto_sdmdu_blister === true ? 'stripe--apto' :
         (clasificacion?.requiere_reenvasado === true || clasificacion?.requiere_reetiquetado === true) ? 'stripe--intervencion' :
-        'stripe--pending'
+        (!clasificacion || (clasificacion.apto_sdmdu_blister === null && clasificacion.requiere_reenvasado === null && clasificacion.requiere_reetiquetado === null)) ? 'stripe--pending' :
+        'stripe--no-apto'
       }`} />
 
       <div className="bc-med-card__body">

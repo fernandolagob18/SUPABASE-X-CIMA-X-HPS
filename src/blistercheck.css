@@ -465,9 +465,10 @@
 .bc-med-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
 
 .bc-med-card__stripe { width: 5px; flex-shrink: 0; }
-.stripe--apto { background: var(--color-success); }
-.stripe--intervencion { background: var(--color-warning); }
-.stripe--pending { background: var(--color-card-border); }
+.bc-med-card__stripe.stripe--apto { background: var(--color-success); }
+.bc-med-card__stripe.stripe--intervencion { background: var(--color-warning); }
+.bc-med-card__stripe.stripe--pending { background: var(--color-card-border); }
+.bc-med-card__stripe.stripe--no-apto { background: #ef4444; }
 
 .bc-med-card__body { flex: 1; padding: 1rem; }
 
