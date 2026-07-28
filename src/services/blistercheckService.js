@@ -7,7 +7,6 @@ import { supabase } from '../lib/supabase';
 
 const CATALOG_TABLE = 'blistercheck_catalogo';
 const CLASIFICACION_TABLE = 'blistercheck_clasificacion';
-const MAX_RESULTS = 50;
 
 // ─── BÚSQUEDA SIMPLE ──────────────────────────────────────────────────────────
 
@@ -32,16 +31,14 @@ export async function searchSimple(query) {
     supabaseQuery = supabase
       .from(CATALOG_TABLE)
       .select('*')
-      .ilike('cn', `${q}%`)
-      .limit(MAX_RESULTS);
+      .ilike('cn', `${q}%`);
   } else {
     // Búsqueda por nombre de marca o principio activo
     supabaseQuery = supabase
       .from(CATALOG_TABLE)
       .select('*')
       .or(`nombre.ilike.%${q}%,principio_activo.ilike.%${q}%`)
-      .order('nombre', { ascending: true })
-      .limit(MAX_RESULTS);
+      .order('nombre', { ascending: true });
   }
 
   const { data, error } = await supabaseQuery;
@@ -63,8 +60,7 @@ export async function searchAvanzado(filtros = {}) {
   let query = supabase
     .from(CATALOG_TABLE)
     .select('*')
-    .order('nombre', { ascending: true })
-    .limit(MAX_RESULTS);
+    .order('nombre', { ascending: true });
 
   if (filtros.nombre?.trim()) {
     query = query.ilike('nombre', `%${filtros.nombre.trim()}%`);
