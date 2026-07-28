@@ -822,7 +822,9 @@
   .bc-med-card__nombre { color: #2dd4bf; }
   .bc-foto-envase, .bc-foto-forma { background: #1e293b; border-color: #334155; }
   .bc-notas-input { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+  .bc-badge--pending { background: rgba(255,255,255,0.05); color: #cbd5e1; border-color: #334155; }
   .bc-tristate-btn { border-color: #334155; }
+  .bc-tristate-btn.tristate--neutral.selected { background: rgba(255,255,255,0.08); color: #cbd5e1; border-color: #475569; }
   .bc-podium-item { background: rgba(255,255,255,0.03); border-color: #334155; }
   .bc-podium-item--1 { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.05); }
   .bc-export-option:hover { background: rgba(255,255,255,0.04); }
