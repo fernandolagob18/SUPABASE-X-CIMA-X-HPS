@@ -8,11 +8,6 @@ import {
   getViasAdministracion,
 } from '../../services/blistercheckService';
 
-const TIPOS_PRESCRIPCION = [
-  'Todos',
-  'Sin Receta',
-  'Medicamento Sujeto A Prescripción Médica',
-];
 
 function MedicamentoBuscador({ onSelectMedicamento }) {
   // Buscador simple
@@ -30,7 +25,6 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     laboratorio: '',
     formaSimplificada: '',
     viaAdministracion: '',
-    tipoPrescripcion: '',
   });
   const [formas, setFormas] = useState([]);
   const [vias, setVias] = useState([]);
@@ -94,7 +88,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   }, [filtros]);
 
   const handleLimpiarAvanzado = () => {
-    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaSimplificada: '', viaAdministracion: '', tipoPrescripcion: '' });
+    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaSimplificada: '', viaAdministracion: '' });
     setResultados([]);
     setBuscadoAlgunaVez(false);
   };
@@ -206,18 +200,6 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
                 </select>
               </div>
 
-              <div className="bc-filtro-field">
-                <label className="bc-filtro-label">Prescripción</label>
-                <select
-                  className="bc-filtro-select"
-                  value={filtros.tipoPrescripcion}
-                  onChange={e => handleFiltroChange('tipoPrescripcion', e.target.value)}
-                >
-                  {TIPOS_PRESCRIPCION.map(t => (
-                    <option key={t} value={t === 'Todos' ? '' : t}>{t}</option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <div className="bc-avanzado-actions">

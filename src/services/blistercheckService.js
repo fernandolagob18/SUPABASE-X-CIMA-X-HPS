@@ -59,7 +59,6 @@ export async function searchSimple(query) {
  * @param {string} filtros.laboratorio
  * @param {string} filtros.formaSimplificada
  * @param {string} filtros.viaAdministracion
- * @param {string} filtros.tipoPrescripcion
  */
 export async function searchAvanzado(filtros = {}) {
   let query = supabase
@@ -83,9 +82,7 @@ export async function searchAvanzado(filtros = {}) {
   if (filtros.viaAdministracion?.trim()) {
     query = query.ilike('via_administracion', `%${filtros.viaAdministracion.trim()}%`);
   }
-  if (filtros.tipoPrescripcion?.trim()) {
-    query = query.ilike('tipo_prescripcion', `%${filtros.tipoPrescripcion.trim()}%`);
-  }
+
 
   const { data, error } = await query;
   if (error) throw error;
