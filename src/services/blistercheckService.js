@@ -56,8 +56,7 @@ export async function searchSimple(query) {
  * @param {Object} filtros
  * @param {string} filtros.nombre
  * @param {string} filtros.principioActivo
- * @param {string} filtros.laboratorio
- * @param {string} filtros.formaSimplificada
+ * @param {string} filtros.formaFarmaceutica
  * @param {string} filtros.viaAdministracion
  */
 export async function searchAvanzado(filtros = {}) {
@@ -76,8 +75,8 @@ export async function searchAvanzado(filtros = {}) {
   if (filtros.laboratorio?.trim()) {
     query = query.ilike('laboratorio', `%${filtros.laboratorio.trim()}%`);
   }
-  if (filtros.formaSimplificada?.trim()) {
-    query = query.eq('forma_simplificada', filtros.formaSimplificada.trim());
+  if (filtros.formaFarmaceutica?.trim()) {
+    query = query.eq('forma_farmaceutica', filtros.formaFarmaceutica.trim());
   }
   if (filtros.viaAdministracion?.trim()) {
     query = query.ilike('via_administracion', `%${filtros.viaAdministracion.trim()}%`);
@@ -91,16 +90,16 @@ export async function searchAvanzado(filtros = {}) {
 
 // ─── VALORES ÚNICOS PARA FILTROS ──────────────────────────────────────────────
 
-export async function getFormasSimplificadas() {
+export async function getFormasFarmaceuticas() {
   const { data, error } = await supabase
     .from(CATALOG_TABLE)
-    .select('forma_simplificada')
-    .not('forma_simplificada', 'is', null)
-    .order('forma_simplificada');
+    .select('forma_farmaceutica')
+    .not('forma_farmaceutica', 'is', null)
+    .order('forma_farmaceutica');
 
   if (error) throw error;
   // Devolver valores únicos
-  return [...new Set((data || []).map(r => r.forma_simplificada))].filter(Boolean);
+  return [...new Set((data || []).map(r => r.forma_farmaceutica))].filter(Boolean);
 }
 
 export async function getViasAdministracion() {

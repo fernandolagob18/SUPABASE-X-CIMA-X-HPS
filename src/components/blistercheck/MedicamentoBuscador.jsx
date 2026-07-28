@@ -4,7 +4,7 @@ import MedicamentoCard from './MedicamentoCard';
 import {
   searchSimple,
   searchAvanzado,
-  getFormasSimplificadas,
+  getFormasFarmaceuticas,
   getViasAdministracion,
 } from '../../services/blistercheckService';
 
@@ -23,7 +23,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     nombre: '',
     principioActivo: '',
     laboratorio: '',
-    formaSimplificada: '',
+    formaFarmaceutica: '',
     viaAdministracion: '',
   });
   const [formas, setFormas] = useState([]);
@@ -33,7 +33,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
 
   // Cargar opciones de filtros al montar
   useEffect(() => {
-    getFormasSimplificadas().then(setFormas).catch(() => {});
+    getFormasFarmaceuticas().then(setFormas).catch(() => {});
     getViasAdministracion().then(setVias).catch(() => {});
   }, []);
 
@@ -88,7 +88,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   }, [filtros]);
 
   const handleLimpiarAvanzado = () => {
-    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaSimplificada: '', viaAdministracion: '' });
+    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '' });
     setResultados([]);
     setBuscadoAlgunaVez(false);
   };
@@ -180,8 +180,8 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
                 <label className="bc-filtro-label">Forma farmacéutica</label>
                 <select
                   className="bc-filtro-select"
-                  value={filtros.formaSimplificada}
-                  onChange={e => handleFiltroChange('formaSimplificada', e.target.value)}
+                  value={filtros.formaFarmaceutica}
+                  onChange={e => handleFiltroChange('formaFarmaceutica', e.target.value)}
                 >
                   <option value="">Todas</option>
                   {formas.map(f => <option key={f} value={f}>{f}</option>)}
