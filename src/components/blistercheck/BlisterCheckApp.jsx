@@ -54,7 +54,7 @@ function BlisterCheckApp({ onVolver }) {
         <div className="bc-topbar__left">
           <button className="bc-back-btn" onClick={onVolver} title="Volver al menú principal">
             <ArrowLeft size={18} />
-            <span>Menú</span>
+            <span>Volver al menú de inicio</span>
           </button>
           <div className="bc-logo">
             <ShieldCheck size={22} className="bc-logo__icon" />

@@ -428,15 +428,27 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="container">
-        <Header />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <button
+            onClick={() => setActiveModule('menu')}
+            className="bc-back-btn"
+            style={{ background: 'white' }}
+            title="Volver al menú principal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '0.4rem' }}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Volver al menú de inicio
+          </button>
 
-        <button
-          onClick={handleLogout}
-          className="logout-btn"
-          title="Cerrar sesión"
-        >
-          Cerrar sesión
-        </button>
+          <button
+            onClick={handleLogout}
+            className="logout-btn"
+            title="Cerrar sesión"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+
+        <Header />
 
         <main className="main-content">
           <CatalogUpload onCatalogLoaded={handleCatalogLoaded} />
