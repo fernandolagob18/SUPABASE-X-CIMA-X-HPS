@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 import MedicamentoCard from './MedicamentoCard';
 import {
   searchSimple,
@@ -178,32 +179,24 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
 
               <div className="bc-filtro-field">
                 <label className="bc-filtro-label">Forma farmacéutica</label>
-                <input
-                  type="text"
-                  list="formas-list"
-                  className="bc-filtro-input"
-                  placeholder="Ej: Comprimido..."
+                <CustomSelect
+                  options={formas}
                   value={filtros.formaFarmaceutica}
-                  onChange={e => handleFiltroChange('formaFarmaceutica', e.target.value)}
+                  onChange={val => handleFiltroChange('formaFarmaceutica', val)}
+                  placeholder="Todas"
+                  searchPlaceholder="Buscar forma farmacéutica..."
                 />
-                <datalist id="formas-list">
-                  {formas.map(f => <option key={f} value={f} />)}
-                </datalist>
               </div>
 
               <div className="bc-filtro-field">
                 <label className="bc-filtro-label">Vía de administración</label>
-                <input
-                  type="text"
-                  list="vias-list"
-                  className="bc-filtro-input"
-                  placeholder="Ej: Oral..."
+                <CustomSelect
+                  options={vias}
                   value={filtros.viaAdministracion}
-                  onChange={e => handleFiltroChange('viaAdministracion', e.target.value)}
+                  onChange={val => handleFiltroChange('viaAdministracion', val)}
+                  placeholder="Todas"
+                  searchPlaceholder="Buscar vía de administración..."
                 />
-                <datalist id="vias-list">
-                  {vias.map(v => <option key={v} value={v} />)}
-                </datalist>
               </div>
 
             </div>
