@@ -633,6 +633,7 @@
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 .bc-toggle-switch.on .bc-toggle-thumb { transform: translateX(20px); }
+.bc-toggle-switch.on-ec .bc-toggle-thumb { transform: translateX(20px); }
 
 .bc-notas-section { display: flex; flex-direction: column; gap: 0.5rem; }
 .bc-notas-label { font-weight: 600; font-size: 0.85rem; color: var(--color-primary); }
