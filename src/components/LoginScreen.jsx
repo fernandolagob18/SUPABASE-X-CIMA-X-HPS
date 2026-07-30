@@ -69,7 +69,7 @@ function LoginScreen({ onLogin }) {
                     </svg>
                 </div>
 
-                <h1 className="login-title">CIMA Watch</h1>
+                <h1 className="login-title">HPS Suite</h1>
                 <p className="login-subtitle">Introduce tus credenciales</p>
 
                 <div className="login-field">
