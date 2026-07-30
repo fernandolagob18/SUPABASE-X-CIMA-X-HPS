@@ -303,6 +303,7 @@ export async function getExportData(modo = 'clasificados') {
       requiere_reenvasado,
       requiere_reetiquetado,
       apto_sdmdu_blister,
+      solo_envase_clinico,
       en_mi_farmacia,
       notas,
       fecha_clasificacion,

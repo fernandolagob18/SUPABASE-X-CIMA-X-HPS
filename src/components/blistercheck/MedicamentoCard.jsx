@@ -12,13 +12,19 @@ function ClasificacionBadge({ clasificacion }) {
     );
   }
 
-  const { apto_sdmdu_blister, requiere_reenvasado, requiere_reetiquetado } = clasificacion;
+  const { apto_sdmdu_blister, requiere_reenvasado, requiere_reetiquetado, solo_envase_clinico } = clasificacion;
+  const ecPill = solo_envase_clinico
+    ? <span className="bc-badge bc-badge--ec" title="Aplica solo al envase clínico">EC</span>
+    : null;
 
   if (apto_sdmdu_blister === true) {
     return (
-      <span className="bc-badge bc-badge--apto">
-        <CheckCircle size={11} /> Apto SDMDU
-      </span>
+      <>
+        <span className="bc-badge bc-badge--apto">
+          <CheckCircle size={11} /> Apto SDMDU
+        </span>
+        {ecPill}
+      </>
     );
   }
 
@@ -27,9 +33,12 @@ function ClasificacionBadge({ clasificacion }) {
     if (requiere_reenvasado) partes.push('Reenvasado');
     if (requiere_reetiquetado) partes.push('Reetiquetado');
     return (
-      <span className="bc-badge bc-badge--intervencion">
-        <AlertTriangle size={11} /> {partes.join(' + ')}
-      </span>
+      <>
+        <span className="bc-badge bc-badge--intervencion">
+          <AlertTriangle size={11} /> {partes.join(' + ')}
+        </span>
+        {ecPill}
+      </>
     );
   }
 
@@ -45,9 +54,12 @@ function ClasificacionBadge({ clasificacion }) {
 
   // Si está clasificado pero no ha cumplido ninguna de las condiciones anteriores (todo es false o null)
   return (
-    <span className="bc-badge" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}>
-      <XCircle size={11} /> No Apto SDMDU
-    </span>
+    <>
+      <span className="bc-badge" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}>
+        <XCircle size={11} /> No Apto SDMDU
+      </span>
+      {ecPill}
+    </>
   );
 }
 

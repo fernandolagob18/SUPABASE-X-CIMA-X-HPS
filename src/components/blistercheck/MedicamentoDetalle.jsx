@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package } from 'lucide-react';
 import { saveClasificacion } from '../../services/blistercheckService';
 
 // ── Componente tristate: Sí / No / Sin clasificar ────────────────────────────
@@ -34,11 +34,12 @@ function TristateToggle({ label, descripcion, value, onChange }) {
 
 function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardada, onVolver }) {
   const [form, setForm] = useState({
-    requiere_reenvasado:   clasificacion?.requiere_reenvasado   ?? null,
-    requiere_reetiquetado: clasificacion?.requiere_reetiquetado ?? null,
-    apto_sdmdu_blister:    clasificacion?.apto_sdmdu_blister    ?? null,
-    en_mi_farmacia:        clasificacion?.en_mi_farmacia        ?? false,
-    notas:                 clasificacion?.notas                 ?? '',
+    requiere_reenvasado:    clasificacion?.requiere_reenvasado    ?? null,
+    requiere_reetiquetado:  clasificacion?.requiere_reetiquetado  ?? null,
+    apto_sdmdu_blister:     clasificacion?.apto_sdmdu_blister     ?? null,
+    solo_envase_clinico:    clasificacion?.solo_envase_clinico    ?? false,
+    en_mi_farmacia:         clasificacion?.en_mi_farmacia         ?? false,
+    notas:                  clasificacion?.notas                  ?? '',
   });
 
   const [saving, setSaving] = useState(false);
@@ -48,11 +49,12 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
   useEffect(() => {
     if (clasificacion) {
       setForm({
-        requiere_reenvasado:   clasificacion.requiere_reenvasado   ?? null,
-        requiere_reetiquetado: clasificacion.requiere_reetiquetado ?? null,
-        apto_sdmdu_blister:    clasificacion.apto_sdmdu_blister    ?? null,
-        en_mi_farmacia:        clasificacion.en_mi_farmacia        ?? false,
-        notas:                 clasificacion.notas                 ?? '',
+        requiere_reenvasado:    clasificacion.requiere_reenvasado    ?? null,
+        requiere_reetiquetado:  clasificacion.requiere_reetiquetado  ?? null,
+        apto_sdmdu_blister:     clasificacion.apto_sdmdu_blister     ?? null,
+        solo_envase_clinico:    clasificacion.solo_envase_clinico    ?? false,
+        en_mi_farmacia:         clasificacion.en_mi_farmacia         ?? false,
+        notas:                  clasificacion.notas                  ?? '',
       });
     }
   }, [clasificacion]);
@@ -185,6 +187,31 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
               value={form.apto_sdmdu_blister}
               onChange={v => handleChange('apto_sdmdu_blister', v)}
             />
+
+            {/* Separador */}
+            <hr className="bc-clas-divider" />
+
+            {/* Envase Clínico */}
+            <label className="bc-farmacia-toggle">
+              <div className="bc-farmacia-info">
+                <Package size={16} className="bc-ec-icon" />
+                <div>
+                  <span className="bc-farmacia-label">
+                    Envase Clínico
+                    {form.solo_envase_clinico && (
+                      <span className="bc-badge bc-badge--ec" style={{ marginLeft: '0.5rem', verticalAlign: 'middle' }}>EC</span>
+                    )}
+                  </span>
+                  <span className="bc-farmacia-desc">La clasificación aplica únicamente al envase clínico (hospitalario)</span>
+                </div>
+              </div>
+              <div
+                className={`bc-toggle-switch ${form.solo_envase_clinico ? 'on-ec' : ''}`}
+                onClick={() => handleChange('solo_envase_clinico', !form.solo_envase_clinico)}
+              >
+                <div className="bc-toggle-thumb" />
+              </div>
+            </label>
 
             {/* Separador */}
             <hr className="bc-clas-divider" />

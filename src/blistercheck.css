@@ -503,6 +503,14 @@
 .bc-badge--intervencion { background: #fffbeb; color: var(--color-warning); border: 1px solid #fde68a; }
 .bc-badge--pending { background: #f1f5f9; color: var(--color-text-muted); border: 1px solid var(--color-card-border); }
 .bc-badge--farmacia { background: rgba(8,145,178,0.1); color: #0891b2; border: 1px solid rgba(8,145,178,0.2); }
+.bc-badge--ec {
+  background: rgba(217,119,6,0.12);
+  color: #b45309;
+  border: 1px solid rgba(217,119,6,0.3);
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
 
 .bc-med-card__nombre { font-size: 0.9rem; font-weight: 600; color: var(--color-text); margin: 0 0 0.6rem; line-height: 1.3; }
 .bc-med-card__details { display: flex; flex-direction: column; gap: 0.2rem; }
@@ -608,6 +616,7 @@
 .bc-farmacia-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
 .bc-farmacia-info { display: flex; align-items: flex-start; gap: 0.6rem; }
 .bc-farmacia-icon { color: #0891b2; margin-top: 2px; }
+.bc-ec-icon { color: #b45309; margin-top: 2px; }
 .bc-farmacia-label { display: block; font-weight: 600; font-size: 0.9rem; color: var(--color-text); }
 .bc-farmacia-desc { display: block; font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.15rem; }
 
@@ -617,6 +626,7 @@
   transition: background 0.2s; flex-shrink: 0;
 }
 .bc-toggle-switch.on { background: var(--color-primary); }
+.bc-toggle-switch.on-ec { background: #d97706; }
 .bc-toggle-thumb {
   width: 18px; height: 18px; background: white; border-radius: 50%;
   position: absolute; top: 3px; left: 3px; transition: transform 0.2s;
