@@ -138,6 +138,7 @@ function BlisterCheckApp({ onVolver }) {
 
         {vistaActiva === 'detail' && medicamentoSeleccionado && (
           <MedicamentoDetalle
+            key={medicamentoSeleccionado.nregistro}
             medicamento={medicamentoSeleccionado}
             clasificacion={clasificacionActual}
             onClasificacionGuardada={handleClasificacionGuardada}
