@@ -273,8 +273,7 @@
   width: 5px;
   flex-shrink: 0;
 }
-.pm-card--con-minimo .pm-card-stripe { background: linear-gradient(180deg, #10b981, #059669); }
-.pm-card--sin-minimo .pm-card-stripe { background: linear-gradient(180deg, #9ca3af, #6b7280); }
+
 
 .pm-card-body {
   padding: 1rem 1rem 0.9rem;
