@@ -11,6 +11,17 @@ function formatEur(value) {
   return Number(value).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
+// Devuelve la clase CSS y el label del badge según el importe mínimo
+function getNivel(minimo_eur) {
+  if (minimo_eur === null || minimo_eur === undefined) {
+    return { cardClass: 'pm-card--sin-minimo', badgeClass: 'pm-badge--sin-minimo', label: 'Sin pedido mínimo' };
+  }
+  const v = Number(minimo_eur);
+  if (v <= 75)  return { cardClass: 'pm-card--nivel-amarillo', badgeClass: 'pm-badge--nivel-amarillo', label: `${formatEur(v)} € mín.` };
+  if (v <= 150) return { cardClass: 'pm-card--nivel-naranja',  badgeClass: 'pm-badge--nivel-naranja',  label: `${formatEur(v)} € mín.` };
+  return           { cardClass: 'pm-card--nivel-rojo',      badgeClass: 'pm-badge--nivel-rojo',      label: `${formatEur(v)} € mín.` };
+}
+
 // ─── Modal de creación / edición ──────────────────────────────────────────────
 
 function LaboratorioModal({ inicial, onGuardar, onCerrar, saving }) {
@@ -99,10 +110,10 @@ function LaboratorioModal({ inicial, onGuardar, onCerrar, saving }) {
 
 function LaboratorioCard({ lab, onEditar, onEliminar }) {
   const [confirmando, setConfirmando] = useState(false);
-  const tieneMinimo = lab.minimo_eur !== null && lab.minimo_eur !== undefined;
+  const { cardClass, badgeClass, label } = getNivel(lab.minimo_eur);
 
   return (
-    <div className={`pm-card ${tieneMinimo ? 'pm-card--con-minimo' : 'pm-card--sin-minimo'}`}>
+    <div className={`pm-card ${cardClass}`}>
       <div className="pm-card-stripe" />
       <div className="pm-card-body">
         <div className="pm-card-top">
@@ -126,14 +137,10 @@ function LaboratorioCard({ lab, onEditar, onEliminar }) {
         </div>
 
         <div className="pm-card-badge-row">
-          {tieneMinimo ? (
-            <span className="pm-badge pm-badge--minimo">
-              <Euro size={11} />
-              {formatEur(lab.minimo_eur)} € mín.
-            </span>
-          ) : (
-            <span className="pm-badge pm-badge--sin-minimo">Sin pedido mínimo</span>
-          )}
+          <span className={`pm-badge ${badgeClass}`}>
+            {label !== 'Sin pedido mínimo' && <Euro size={11} />}
+            {label}
+          </span>
         </div>
 
         {lab.notas && <p className="pm-card-notas">{lab.notas}</p>}
