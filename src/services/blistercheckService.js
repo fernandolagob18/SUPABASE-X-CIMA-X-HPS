@@ -24,24 +24,19 @@ export async function searchSimple(query) {
   if (!query || query.trim().length < 2) return [];
 
   const q = query.trim();
-  let supabaseQuery;
 
   if (isNumericQuery(q)) {
-    // Búsqueda por código nacional
-    supabaseQuery = supabase
+    // Búsqueda por código nacional (numérico — sin tildes, ilike directo es suficiente)
+    const { data, error } = await supabase
       .from(CATALOG_TABLE)
       .select('*')
       .ilike('cn', `${q}%`);
-  } else {
-    // Búsqueda por nombre de marca o principio activo
-    supabaseQuery = supabase
-      .from(CATALOG_TABLE)
-      .select('*')
-      .or(`nombre.ilike.%${q}%,principio_activo.ilike.%${q}%`)
-      .order('nombre', { ascending: true });
+    if (error) throw error;
+    return data || [];
   }
 
-  const { data, error } = await supabaseQuery;
+  // Búsqueda por nombre / principio activo usando RPC con unaccent (insensible a tildes)
+  const { data, error } = await supabase.rpc('bc_search_simple', { q });
   if (error) throw error;
   return data || [];
 }
@@ -57,42 +52,16 @@ export async function searchSimple(query) {
  * @param {string} filtros.viaAdministracion
  */
 export async function searchAvanzado(filtros = {}) {
-  let query;
-  
-  if (filtros.soloClasificados) {
-    query = supabase
-      .from(CATALOG_TABLE)
-      .select(`
-        *,
-        blistercheck_clasificacion!inner(nregistro)
-      `)
-      .or('requiere_reenvasado.not.is.null,requiere_reetiquetado.not.is.null,apto_sdmdu_blister.not.is.null', { referencedTable: 'blistercheck_clasificacion' })
-      .order('nombre', { ascending: true });
-  } else {
-    query = supabase
-      .from(CATALOG_TABLE)
-      .select('*')
-      .order('nombre', { ascending: true });
-  }
+  // Usa RPC con unaccent para que la búsqueda sea insensible a tildes en todos los campos
+  const { data, error } = await supabase.rpc('bc_search_avanzado', {
+    p_nombre:             filtros.nombre?.trim()            || null,
+    p_principio_activo:   filtros.principioActivo?.trim()   || null,
+    p_laboratorio:        filtros.laboratorio?.trim()       || null,
+    p_forma_farmaceutica: filtros.formaFarmaceutica?.trim() || null,
+    p_via_administracion: filtros.viaAdministracion?.trim() || null,
+    p_solo_clasificados:  filtros.soloClasificados          ?? false,
+  });
 
-  if (filtros.nombre?.trim()) {
-    query = query.ilike('nombre', `%${filtros.nombre.trim()}%`);
-  }
-  if (filtros.principioActivo?.trim()) {
-    query = query.ilike('principio_activo', `%${filtros.principioActivo.trim()}%`);
-  }
-  if (filtros.laboratorio?.trim()) {
-    query = query.ilike('laboratorio', `%${filtros.laboratorio.trim()}%`);
-  }
-  if (filtros.formaFarmaceutica?.trim()) {
-    query = query.eq('forma_farmaceutica', filtros.formaFarmaceutica.trim());
-  }
-  if (filtros.viaAdministracion?.trim()) {
-    query = query.ilike('via_administracion', `%${filtros.viaAdministracion.trim()}%`);
-  }
-
-
-  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
