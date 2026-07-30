@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import './index.css';
 import './blistercheck.css';
+import './pedidos.css';
 import { supabase } from './lib/supabase';
 import Header from './components/Header';
 import Filters from './components/Filters';
@@ -14,6 +15,7 @@ import LoginScreen from './components/LoginScreen';
 import MainMenuScreen from './components/MainMenuScreen';
 import BlisterCheckApp from './components/blistercheck/BlisterCheckApp';
 import NioshApp from './components/niosh/NioshApp';
+import PedidosMinimosApp from './components/pedidosminimos/PedidosMinimosApp';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -431,6 +433,15 @@ function App() {
     return (
       <ErrorBoundary>
         <NioshApp onVolver={() => setActiveModule('menu')} />
+      </ErrorBoundary>
+    );
+  }
+
+  // ── Módulo Pedidos Mínimos ──
+  if (activeModule === 'pedidosminimos') {
+    return (
+      <ErrorBoundary>
+        <PedidosMinimosApp onVolver={() => setActiveModule('menu')} />
       </ErrorBoundary>
     );
   }

@@ -1,4 +1,4 @@
-import { Pill, ShieldCheck, AlertOctagon } from 'lucide-react';
+import { Pill, ShieldCheck, AlertOctagon, PackageOpen } from 'lucide-react';
 
 function MainMenuScreen({ onSelectModule, onLogout, userEmail }) {
   return (
@@ -93,6 +93,28 @@ function MainMenuScreen({ onSelectModule, onLogout, userEmail }) {
                 <span className="module-tag">Riesgo</span>
                 <span className="module-tag">Citotóxicos</span>
                 <span className="module-tag">SNG</span>
+              </div>
+            </div>
+            <div className="module-card__arrow">→</div>
+          </button>
+
+          {/* Pedidos Mínimos Laboratorios */}
+          <button
+            className="module-card module-card--pedidos"
+            onClick={() => onSelectModule('pedidosminimos')}
+          >
+            <div className="module-card__icon module-card__icon--pedidos">
+              <PackageOpen size={36} />
+            </div>
+            <div className="module-card__content">
+              <h2 className="module-card__title">Pedidos Mínimos</h2>
+              <p className="module-card__desc">
+                Gestiona los importes mínimos de pedido por laboratorio. Consulta, añade y actualiza los umbrales de compra sin IVA.
+              </p>
+              <div className="module-card__tags">
+                <span className="module-tag">Laboratorios</span>
+                <span className="module-tag">Compras</span>
+                <span className="module-tag">Pedidos</span>
               </div>
             </div>
             <div className="module-card__arrow">→</div>
