@@ -88,7 +88,21 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
   }, [form.requiere_reenvasado, form.requiere_reetiquetado, medicamento]);
 
   const handleChange = useCallback((campo, valor) => {
-    setForm(prev => ({ ...prev, [campo]: valor }));
+    setForm(prev => {
+      const nuevo = { ...prev, [campo]: valor };
+      
+      // Exclusión mutua: Si es apto, no puede requerir reenvasado/reetiquetado
+      if (campo === 'apto_sdmdu_blister' && valor === true) {
+        nuevo.requiere_reenvasado = false;
+        nuevo.requiere_reetiquetado = false;
+      } 
+      // Si requiere reenvasado/reetiquetado, no puede ser apto directamente
+      else if ((campo === 'requiere_reenvasado' || campo === 'requiere_reetiquetado') && valor === true) {
+        nuevo.apto_sdmdu_blister = false;
+      }
+      
+      return nuevo;
+    });
     setSavedOk(false);
   }, []);
 

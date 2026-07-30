@@ -56,14 +56,17 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
       setLoading(true);
       setError(null);
       setBuscadoAlgunaVez(true);
+      let isCurrent = true;
       try {
         const data = await searchSimple(query);
-        setResultados(data);
+        if (isCurrent) setResultados(data);
       } catch (err) {
-        setError('Error al buscar. Comprueba tu conexión.');
-        setResultados([]);
+        if (isCurrent) {
+          setError('Error al buscar. Comprueba tu conexión.');
+          setResultados([]);
+        }
       } finally {
-        setLoading(false);
+        if (isCurrent) setLoading(false);
       }
     }, 400);
 
