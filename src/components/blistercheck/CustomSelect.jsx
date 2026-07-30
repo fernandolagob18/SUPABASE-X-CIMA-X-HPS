@@ -23,8 +23,11 @@ export default function CustomSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Normaliza texto eliminando tildes/diacríticos para búsqueda insensible a acentos
+  const norm = str => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
   const filteredOptions = options.filter(opt =>
-    opt.toLowerCase().includes(search.toLowerCase())
+    norm(opt).includes(norm(search))
   );
 
   return (
