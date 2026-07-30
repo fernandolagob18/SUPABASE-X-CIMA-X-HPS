@@ -1,4 +1,4 @@
-import { Pill, ShieldCheck, AlertOctagon, PackageOpen } from 'lucide-react';
+import { Pill, ShieldCheck, AlertOctagon, PackageOpen, Calculator } from 'lucide-react';
 
 function MainMenuScreen({ onSelectModule, onLogout, userEmail }) {
   return (
@@ -115,6 +115,31 @@ function MainMenuScreen({ onSelectModule, onLogout, userEmail }) {
                 <span className="module-tag">Laboratorios</span>
                 <span className="module-tag">Compras</span>
                 <span className="module-tag">Pedidos</span>
+              </div>
+            </div>
+            <div className="module-card__arrow">→</div>
+          </button>
+        </div>
+
+        <div className="main-menu-grid" style={{ marginTop: '1.5rem' }}>
+          {/* Análisis Económico */}
+          <button
+            className="module-card module-card--economico"
+            onClick={() => onSelectModule('analisiseconomico')}
+            style={{ borderColor: 'rgba(14, 165, 233, 0.2)' }}
+          >
+            <div className="module-card__icon module-card__icon--economico" style={{ backgroundColor: 'rgba(14, 165, 233, 0.1)', color: '#0ea5e9' }}>
+              <Calculator size={36} />
+            </div>
+            <div className="module-card__content">
+              <h2 className="module-card__title">Análisis Económico</h2>
+              <p className="module-card__desc">
+                Carga un archivo de consumos y obtén un desglose económico del gasto por servicio o unidad destino sin IVA.
+              </p>
+              <div className="module-card__tags">
+                <span className="module-tag">Economía</span>
+                <span className="module-tag">Consumos</span>
+                <span className="module-tag">Desglose</span>
               </div>
             </div>
             <div className="module-card__arrow">→</div>
