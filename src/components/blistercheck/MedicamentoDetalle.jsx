@@ -64,15 +64,27 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
 
   // Cargar alternativas si requiere manipulación
   useEffect(() => {
+    let isCurrent = true;
+
     if (form.requiere_reenvasado === true || form.requiere_reetiquetado === true) {
       setLoadingAlternativas(true);
       getAlternativasSDMDU(medicamento)
-        .then(res => setAlternativas(res))
-        .catch(err => console.error("Error cargando alternativas", err))
-        .finally(() => setLoadingAlternativas(false));
+        .then(res => {
+          if (isCurrent) setAlternativas(res);
+        })
+        .catch(err => {
+          if (isCurrent) console.error("Error cargando alternativas", err);
+        })
+        .finally(() => {
+          if (isCurrent) setLoadingAlternativas(false);
+        });
     } else {
       setAlternativas({ compatibles: [], pendientes: [] });
     }
+
+    return () => {
+      isCurrent = false;
+    };
   }, [form.requiere_reenvasado, form.requiere_reetiquetado, medicamento]);
 
   const handleChange = useCallback((campo, valor) => {
