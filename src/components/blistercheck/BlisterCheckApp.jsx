@@ -142,6 +142,7 @@ function BlisterCheckApp({ onVolver }) {
             clasificacion={clasificacionActual}
             onClasificacionGuardada={handleClasificacionGuardada}
             onVolver={handleVolverABusqueda}
+            onSelectAlternativa={handleSelectMedicamento}
           />
         )}
 

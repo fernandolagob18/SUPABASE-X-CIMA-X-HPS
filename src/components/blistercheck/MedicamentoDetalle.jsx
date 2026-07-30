@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package } from 'lucide-react';
-import { saveClasificacion } from '../../services/blistercheckService';
+import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package, RefreshCw, HelpCircle } from 'lucide-react';
+import { saveClasificacion, getAlternativasSDMDU } from '../../services/blistercheckService';
 
 // ── Componente tristate: Sí / No / Sin clasificar ────────────────────────────
 function TristateToggle({ label, descripcion, value, onChange }) {
@@ -32,7 +32,7 @@ function TristateToggle({ label, descripcion, value, onChange }) {
   );
 }
 
-function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardada, onVolver }) {
+function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardada, onVolver, onSelectAlternativa }) {
   const [form, setForm] = useState({
     requiere_reenvasado:    clasificacion?.requiere_reenvasado    ?? null,
     requiere_reetiquetado:  clasificacion?.requiere_reetiquetado  ?? null,
@@ -44,6 +44,9 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
 
   const [saving, setSaving] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
+
+  const [alternativas, setAlternativas] = useState({ compatibles: [], pendientes: [] });
+  const [loadingAlternativas, setLoadingAlternativas] = useState(false);
 
   // Actualizar form cuando cambia la clasificación (cargada asíncronamente)
   useEffect(() => {
@@ -58,6 +61,19 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
       });
     }
   }, [clasificacion]);
+
+  // Cargar alternativas si requiere manipulación
+  useEffect(() => {
+    if (form.requiere_reenvasado === true || form.requiere_reetiquetado === true) {
+      setLoadingAlternativas(true);
+      getAlternativasSDMDU(medicamento)
+        .then(res => setAlternativas(res))
+        .catch(err => console.error("Error cargando alternativas", err))
+        .finally(() => setLoadingAlternativas(false));
+    } else {
+      setAlternativas({ compatibles: [], pendientes: [] });
+    }
+  }, [form.requiere_reenvasado, form.requiere_reetiquetado, medicamento]);
 
   const handleChange = useCallback((campo, valor) => {
     setForm(prev => ({ ...prev, [campo]: valor }));
@@ -265,6 +281,56 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
           </div>
         </div>
       </div>
+
+      {/* ── Nueva sección de alternativas ── */}
+      {(form.requiere_reenvasado === true || form.requiere_reetiquetado === true) && (
+        <div className="bc-alternativas-section glass-panel">
+          <div className="bc-alternativas-header">
+            <RefreshCw size={18} className="bc-alternativas-icon" />
+            <h3>Alternativas compatibles con SDMDU</h3>
+          </div>
+          <p className="bc-alternativas-desc">
+            Este medicamento requiere manipulación. Aquí tienes opciones equivalentes (mismo principio activo y dosis) que podrían ser aptas.
+          </p>
+          
+          {loadingAlternativas ? (
+            <div className="bc-loading-mini"><div className="bc-mini-spinner" /> Buscando alternativas...</div>
+          ) : (alternativas.compatibles.length === 0 && alternativas.pendientes.length === 0) ? (
+            <div className="bc-alternativas-empty">No se encontraron alternativas con el mismo principio activo y dosis.</div>
+          ) : (
+            <div className="bc-alternativas-list">
+              {alternativas.compatibles.length > 0 && (
+                <div className="bc-alternativas-group">
+                  <h4 className="bc-alt-group-title compatible"><CheckCircle size={14} /> Compatibles comprobadas</h4>
+                  <div className="bc-alt-cards">
+                    {alternativas.compatibles.map(alt => (
+                      <div key={alt.nregistro} className="bc-alt-card compatible" onClick={() => onSelectAlternativa && onSelectAlternativa(alt)}>
+                        <span className="bc-alt-name">{alt.nombre}</span>
+                        <span className="bc-alt-lab">{alt.laboratorio}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {alternativas.pendientes.length > 0 && (
+                <div className="bc-alternativas-group">
+                  <h4 className="bc-alt-group-title pendiente"><HelpCircle size={14} /> Pendientes de evaluar</h4>
+                  <p className="bc-alt-group-desc">Estos medicamentos tienen las mismas características. ¡Anímate a probarlos para ver si son compatibles!</p>
+                  <div className="bc-alt-cards">
+                    {alternativas.pendientes.map(alt => (
+                      <div key={alt.nregistro} className="bc-alt-card pendiente" onClick={() => onSelectAlternativa && onSelectAlternativa(alt)}>
+                        <span className="bc-alt-name">{alt.nombre}</span>
+                        <span className="bc-alt-lab">{alt.laboratorio}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

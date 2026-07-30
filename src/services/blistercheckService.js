@@ -296,3 +296,51 @@ export async function getExportData(modo = 'clasificados') {
   if (error) throw error;
   return data || [];
 }
+
+// ─── ALTERNATIVAS SDMDU ────────────────────────────────────────────────────────
+
+/**
+ * Busca alternativas de un medicamento con el mismo principio activo, dosis, forma y vía,
+ * y las clasifica en compatibles (apto SDMDU) y pendientes de evaluar.
+ */
+export async function getAlternativasSDMDU(medicamento) {
+  const { nregistro, principio_activo, dosis, forma_farmaceutica, via_administracion } = medicamento;
+  
+  if (!principio_activo || !dosis || !forma_farmaceutica || !via_administracion) {
+    return { compatibles: [], pendientes: [] };
+  }
+
+  const { data, error } = await supabase
+    .from(CATALOG_TABLE)
+    .select(`
+      *,
+      blistercheck_clasificacion (
+        apto_sdmdu_blister,
+        requiere_reenvasado,
+        requiere_reetiquetado
+      )
+    `)
+    .eq('principio_activo', principio_activo)
+    .eq('dosis', dosis)
+    .eq('forma_farmaceutica', forma_farmaceutica)
+    .eq('via_administracion', via_administracion)
+    .neq('nregistro', nregistro);
+
+  if (error) throw error;
+
+  const compatibles = [];
+  const pendientes = [];
+  
+  (data || []).forEach(med => {
+    // Si la propiedad blistercheck_clasificacion es un array (por relación uno a muchos), tomamos el primero
+    const clas = Array.isArray(med.blistercheck_clasificacion) ? med.blistercheck_clasificacion[0] : med.blistercheck_clasificacion;
+    
+    if (clas && clas.apto_sdmdu_blister === true) {
+      compatibles.push(med);
+    } else if (!clas || (clas.apto_sdmdu_blister === null && clas.requiere_reenvasado === null && clas.requiere_reetiquetado === null)) {
+      pendientes.push(med);
+    }
+  });
+
+  return { compatibles, pendientes };
+}
