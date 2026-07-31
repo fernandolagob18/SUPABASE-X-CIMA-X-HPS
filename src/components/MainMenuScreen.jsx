@@ -134,11 +134,12 @@ function MainMenuScreen({ onSelectModule, onLogout, userEmail }) {
             <div className="module-card__content">
               <h2 className="module-card__title">Análisis Económico</h2>
               <p className="module-card__desc">
-                Carga un archivo de consumos y obtén un desglose económico del gasto por servicio o unidad destino sin IVA.
+                Carga archivos de consumos o compras y obtén un desglose económico detallado del gasto por servicio o proveedor.
               </p>
               <div className="module-card__tags">
                 <span className="module-tag">Economía</span>
                 <span className="module-tag">Consumos</span>
+                <span className="module-tag">Compras</span>
                 <span className="module-tag">Desglose</span>
               </div>
             </div>
