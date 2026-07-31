@@ -1,121 +1,22 @@
-import React, { useState, useCallback } from 'react';
-import { read, utils } from 'xlsx';
-import { Calculator, UploadCloud, RefreshCw, AlertCircle, Building2, Euro, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calculator, ShoppingCart, ArrowLeft } from 'lucide-react';
+import AnalisisConsumos from './AnalisisConsumos';
+import AnalisisCompras from './AnalisisCompras';
 
 function AnalisisEconomicoApp({ onVolver }) {
-  const [data, setData] = useState(null);
-  const [totalGeneral, setTotalGeneral] = useState(0);
-  const [error, setError] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [vistaActiva, setVistaActiva] = useState('menu'); // 'menu', 'consumos', 'compras'
 
-  // Helper para parsear números que pueden venir como strings con comas
-  const parseNumber = (val) => {
-    if (typeof val === 'number') return val;
-    if (typeof val === 'string') {
-      const cleanStr = val.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
-      const parsed = parseFloat(cleanStr);
-      return isNaN(parsed) ? 0 : parsed;
-    }
-    return 0;
-  };
+  if (vistaActiva === 'consumos') {
+    return <AnalisisConsumos onVolver={() => setVistaActiva('menu')} />;
+  }
 
-  const procesarArchivo = async (file) => {
-    setError(null);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const workbook = read(arrayBuffer, { type: 'array' });
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      
-      // Convertir a JSON
-      const jsonData = utils.sheet_to_json(worksheet, { defval: null });
-      
-      if (jsonData.length === 0) {
-        throw new Error('El archivo está vacío o no se pudo leer correctamente.');
-      }
-
-      // Validar cabeceras clave
-      const sampleRow = jsonData[0];
-      const requiredColumns = ['Cantidad principal', 'Alm. destino', 'Últ. precio'];
-      
-      const missingColumns = requiredColumns.filter(col => !(col in sampleRow));
-      if (missingColumns.length > 0) {
-        throw new Error(`El archivo CSV no contiene las columnas necesarias. Faltan: ${missingColumns.join(', ')}`);
-      }
-
-      const consumoPorServicio = {};
-      let granTotal = 0;
-
-      jsonData.forEach(row => {
-        const destino = row['Alm. destino'];
-        if (!destino) return; // Ignorar filas sin destino (podrían ser totales o filas vacías)
-
-        const cantidad = parseNumber(row['Cantidad principal']);
-        const precio = parseNumber(row['Últ. precio']);
-        
-        const costeFila = cantidad * precio;
-
-        if (!consumoPorServicio[destino]) {
-          consumoPorServicio[destino] = 0;
-        }
-        
-        consumoPorServicio[destino] += costeFila;
-        granTotal += costeFila;
-      });
-
-      // Convertir el objeto a un array ordenado por gasto (de mayor a menor)
-      const resultadosArray = Object.keys(consumoPorServicio)
-        .map(servicio => ({
-          servicio,
-          gasto: consumoPorServicio[servicio],
-          porcentaje: granTotal > 0 ? (consumoPorServicio[servicio] / granTotal) * 100 : 0
-        }))
-        .sort((a, b) => b.gasto - a.gasto); // Orden descendente
-
-      setData(resultadosArray);
-      setTotalGeneral(granTotal);
-      
-    } catch (err) {
-      console.error(err);
-      setError(err.message || 'Error al procesar el archivo. Asegúrate de que es un CSV válido.');
-      setData(null);
-      setTotalGeneral(0);
-    }
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      procesarArchivo(file);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      procesarArchivo(file);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const formatEuro = (value) => {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
-  };
+  if (vistaActiva === 'compras') {
+    return <AnalisisCompras onVolver={() => setVistaActiva('menu')} />;
+  }
 
   return (
     <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Botón de volver */}
-      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '2rem' }}>
         <button
           onClick={onVolver}
           className="bc-back-btn"
@@ -127,97 +28,48 @@ function AnalisisEconomicoApp({ onVolver }) {
       </div>
 
       <div className="ae-container">
-        {/* Cabecera */}
-        <div className="ae-header glass-panel">
-          <div className="ae-header-icon">
-            <Calculator size={28} />
-          </div>
-          <div>
-            <h2>Análisis Económico de Consumos</h2>
-            <p>Sube un archivo de consumos para calcular el gasto por servicio o unidad destino (Base Imponible sin IVA).</p>
-          </div>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '2rem', color: 'var(--color-text)', marginBottom: '0.5rem' }}>Análisis Económico</h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '1.1rem' }}>Selecciona el tipo de análisis que deseas realizar</p>
         </div>
 
-        {error && (
-          <div className="ae-error">
-            <AlertCircle size={20} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {!data ? (
-          /* Zona de Carga */
-          <label 
-            className={`ae-upload-zone ${isDragging ? 'drag-active' : ''}`}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
+        <div className="ae-menu-grid">
+          {/* Tarjeta Consumos */}
+          <button
+            className="module-card"
+            onClick={() => setVistaActiva('consumos')}
+            style={{ borderColor: 'rgba(13, 148, 136, 0.2)' }}
           >
-            <input 
-              type="file" 
-              accept=".csv,.xlsx,.xls" 
-              onChange={handleFileUpload} 
-              style={{ display: 'none' }} 
-            />
-            <UploadCloud size={48} className="ae-upload-icon" />
-            <p className="ae-upload-text">Haz clic aquí o arrastra tu archivo de consumos</p>
-            <p className="ae-upload-subtext">Soporta CSV, XLS, XLSX</p>
-          </label>
-        ) : (
-          /* Resultados */
-          <>
-            <div className="ae-summary-row">
-              <div className="ae-summary-card glass-panel">
-                <div className="ae-summary-icon-wrap" style={{ color: '#0ea5e9', background: 'rgba(14, 165, 233, 0.1)' }}>
-                  <Building2 size={24} />
-                </div>
-                <div className="ae-summary-info">
-                  <span className="ae-summary-value">{data.length}</span>
-                  <span className="ae-summary-label">Servicios Distintos</span>
-                </div>
-              </div>
-              <div className="ae-summary-card glass-panel">
-                <div className="ae-summary-icon-wrap" style={{ color: '#10b981', background: 'rgba(16, 185, 137, 0.1)' }}>
-                  <Euro size={24} />
-                </div>
-                <div className="ae-summary-info">
-                  <span className="ae-summary-value">{formatEuro(totalGeneral)}</span>
-                  <span className="ae-summary-label">Gasto Total (Sin IVA)</span>
-                </div>
-              </div>
+            <div className="module-card__icon" style={{ backgroundColor: 'rgba(13, 148, 136, 0.1)', color: '#0d9488' }}>
+              <Calculator size={36} />
             </div>
+            <div className="module-card__content">
+              <h2 className="module-card__title">Análisis de Consumos por Servicio</h2>
+              <p className="module-card__desc">
+                Calcula el gasto económico sin IVA desglosado por servicio o unidad destino a partir de los consumos.
+              </p>
+            </div>
+            <div className="module-card__arrow">→</div>
+          </button>
 
-            <div className="ae-table-container glass-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-card-border)' }}>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--color-text)' }}>Desglose por Servicio</h3>
-                <button className="ae-btn-reset" onClick={() => { setData(null); setTotalGeneral(0); }}>
-                  <RefreshCw size={16} />
-                  Analizar otro archivo
-                </button>
-              </div>
-              <table className="ae-table">
-                <thead>
-                  <tr>
-                    <th className="ae-table-rank">#</th>
-                    <th>Servicio / Alm. destino</th>
-                    <th className="ae-table-amount">Gasto (€)</th>
-                    <th className="ae-table-percentage">% Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.map((item, index) => (
-                    <tr key={item.servicio}>
-                      <td className="ae-table-rank">{index + 1}</td>
-                      <td className="ae-table-service">{item.servicio}</td>
-                      <td className="ae-table-amount">{formatEuro(item.gasto)}</td>
-                      <td className="ae-table-percentage">{item.porcentaje.toFixed(2)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Tarjeta Compras */}
+          <button
+            className="module-card"
+            onClick={() => setVistaActiva('compras')}
+            style={{ borderColor: 'rgba(139, 92, 246, 0.2)' }}
+          >
+            <div className="module-card__icon" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }}>
+              <ShoppingCart size={36} />
             </div>
-          </>
-        )}
+            <div className="module-card__content">
+              <h2 className="module-card__title">Análisis de Compras</h2>
+              <p className="module-card__desc">
+                Calcula el gasto total con IVA realizado por Farmacia, desglosado por proveedor a partir de un listado de compras.
+              </p>
+            </div>
+            <div className="module-card__arrow">→</div>
+          </button>
+        </div>
       </div>
     </div>
   );
