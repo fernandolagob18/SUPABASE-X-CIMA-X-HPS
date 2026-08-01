@@ -125,18 +125,23 @@ export async function getClasificacion(nregistro) {
 }
 
 /**
- * Guarda o actualiza la clasificación de un medicamento
+ * Guarda o actualiza la clasificación de un medicamento.
+ * Devuelve el registro guardado (incluyendo updated_at) para refrescar la UI.
  */
 export async function saveClasificacion(nregistro, clasificacion) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from(CLASIFICACION_TABLE)
     .upsert({
       nregistro,
       ...clasificacion,
-    }, { onConflict: 'nregistro' });
+    }, { onConflict: 'nregistro' })
+    .select('*')
+    .single();
 
   if (error) throw error;
+  return data; // Incluye updated_at y fecha_clasificacion
 }
+
 
 /**
  * Obtiene todas las clasificaciones (para stats y export)

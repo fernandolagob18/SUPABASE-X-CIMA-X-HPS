@@ -26,6 +26,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     laboratorio: '',
     formaFarmaceutica: '',
     viaAdministracion: '',
+    codigoNacional: '',
     soloClasificados: false,
   });
   const [formas, setFormas] = useState([]);
@@ -84,7 +85,13 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     setError(null);
     setBuscadoAlgunaVez(true);
     try {
-      const data = await searchAvanzado(f);
+      let data;
+      if (f.codigoNacional && f.codigoNacional.trim() !== '') {
+        // Si se filtra por CN, usamos searchSimple que ya tiene el ilike sobre cn
+        data = await searchSimple(f.codigoNacional.trim());
+      } else {
+        data = await searchAvanzado(f);
+      }
       setResultados(data);
     } catch (err) {
       setError('Error al buscar. Comprueba tu conexión.');
@@ -95,7 +102,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   }, [filtros]);
 
   const handleLimpiarAvanzado = () => {
-    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', soloClasificados: false });
+    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', codigoNacional: '', soloClasificados: false });
     setResultados([]);
     setBuscadoAlgunaVez(false);
   };
@@ -216,6 +223,18 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
                   onChange={val => handleFiltroChange('viaAdministracion', val)}
                   placeholder="Todas"
                   searchPlaceholder="Buscar vía de administración..."
+                />
+              </div>
+
+              <div className="bc-filtro-field">
+                <label className="bc-filtro-label">Código Nacional (CN)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="bc-filtro-input"
+                  placeholder="Ej: 642369..."
+                  value={filtros.codigoNacional}
+                  onChange={e => handleFiltroChange('codigoNacional', e.target.value.replace(/\D/g, ''))}
                 />
               </div>
 

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package, RefreshCw, HelpCircle } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package, RefreshCw, Clock } from 'lucide-react';
 import { saveClasificacion, getAlternativasSDMDU } from '../../services/blistercheckService';
 
 // ── Componente tristate: Sí / No / Sin clasificar ────────────────────────────
@@ -45,6 +45,11 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
   const [saving, setSaving] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
 
+  // Timestamp de la última actualización (viene de Supabase updated_at o fecha_clasificacion)
+  const [ultimaActualizacion, setUltimaActualizacion] = useState(
+    clasificacion?.updated_at || clasificacion?.fecha_clasificacion || null
+  );
+
   const [alternativas, setAlternativas] = useState({ compatibles: [], pendientes: [] });
   const [loadingAlternativas, setLoadingAlternativas] = useState(false);
 
@@ -59,6 +64,7 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
         en_mi_farmacia:         clasificacion.en_mi_farmacia         ?? false,
         notas:                  clasificacion.notas                  ?? '',
       });
+      setUltimaActualizacion(clasificacion.updated_at || clasificacion.fecha_clasificacion || null);
     }
   }, [clasificacion]);
 
@@ -113,8 +119,10 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
   const handleGuardar = useCallback(async () => {
     setSaving(true);
     try {
-      await saveClasificacion(medicamento.nregistro, form);
+      const saved = await saveClasificacion(medicamento.nregistro, form);
       setSavedOk(true);
+      // Refrescar el timestamp con el updated_at devuelto por Supabase
+      if (saved?.updated_at) setUltimaActualizacion(saved.updated_at);
       onClasificacionGuardada({ nregistro: medicamento.nregistro, ...form });
       setTimeout(() => setSavedOk(false), 2000);
     } catch (err) {
@@ -173,7 +181,7 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
           {/* Datos */}
           <div className="bc-detalle-datos">
             <DataRow label="Nº Registro" value={medicamento.nregistro} mono />
-            {medicamento.cn && <DataRow label="Cód. Nacional" value={medicamento.cn} mono />}
+            <DataRow label="Cód. Nacional" value={medicamento.cn || 'No disponible'} mono />
             <DataRow label="Laboratorio" value={medicamento.laboratorio} />
             <DataRow label="Dosis" value={medicamento.dosis} />
             <DataRow label="Principio activo" value={medicamento.principio_activo} />
@@ -308,6 +316,24 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
                 <><Save size={16} /> Guardar clasificación</>
               )}
             </button>
+
+            {/* Timestamp de última actualización */}
+            <div className={`bc-last-update ${ultimaActualizacion ? 'bc-last-update--has-date' : 'bc-last-update--empty'}`}>
+              <Clock size={13} className="bc-last-update-icon" />
+              {ultimaActualizacion ? (
+                <span>
+                  Última actualización:{' '}
+                  <strong>
+                    {new Intl.DateTimeFormat('es-ES', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit'
+                    }).format(new Date(ultimaActualizacion))}
+                  </strong>
+                </span>
+              ) : (
+                <span>Sin clasificar aún</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -658,6 +658,31 @@
 .bc-guardar-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 .bc-guardar-btn.saved { background: var(--color-success); }
 
+/* ── Timestamp de última actualización ── */
+.bc-last-update {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+.bc-last-update--empty {
+  color: var(--color-text-muted);
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.06);
+  font-style: italic;
+}
+.bc-last-update--has-date {
+  color: #0d9488;
+  background: rgba(13, 148, 136, 0.07);
+  border-color: rgba(13, 148, 136, 0.18);
+}
+.bc-last-update--has-date strong { font-weight: 600; }
+.bc-last-update-icon { flex-shrink: 0; opacity: 0.75; }
+
 /* ── Estadísticas ── */
 .bc-stats { max-width: 1000px; }
 
