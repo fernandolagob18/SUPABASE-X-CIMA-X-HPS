@@ -26,7 +26,6 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     laboratorio: '',
     formaFarmaceutica: '',
     viaAdministracion: '',
-    codigoNacional: '',
     soloClasificados: false,
   });
   const [formas, setFormas] = useState([]);
@@ -85,13 +84,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     setError(null);
     setBuscadoAlgunaVez(true);
     try {
-      let data;
-      if (f.codigoNacional && f.codigoNacional.trim() !== '') {
-        // Si se filtra por CN, usamos searchSimple que ya tiene el ilike sobre cn
-        data = await searchSimple(f.codigoNacional.trim());
-      } else {
-        data = await searchAvanzado(f);
-      }
+      const data = await searchAvanzado(f);
       setResultados(data);
     } catch (err) {
       setError('Error al buscar. Comprueba tu conexión.');
@@ -102,7 +95,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   }, [filtros]);
 
   const handleLimpiarAvanzado = () => {
-    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', codigoNacional: '', soloClasificados: false });
+    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', soloClasificados: false });
     setResultados([]);
     setBuscadoAlgunaVez(false);
   };
@@ -130,7 +123,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
               <input
                 type="text"
                 className="bc-search-input"
-                placeholder="Buscar por nombre, principio activo o código nacional..."
+                placeholder="Buscar por nombre o principio activo..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 autoFocus
@@ -226,18 +219,6 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
                 />
               </div>
 
-              <div className="bc-filtro-field">
-                <label className="bc-filtro-label">Código Nacional (CN)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="bc-filtro-input"
-                  placeholder="Ej: 642369..."
-                  value={filtros.codigoNacional}
-                  onChange={e => handleFiltroChange('codigoNacional', e.target.value.replace(/\D/g, ''))}
-                />
-              </div>
-
             </div>
             
             <div className="bc-filtro-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.6rem', padding: '1rem', background: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)', borderRadius: '8px', marginBottom: '1rem' }}>
@@ -294,7 +275,6 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
             <div className="bc-welcome-tips">
               <span>💊 Busca por nombre de marca</span>
               <span>🔬 Busca por principio activo</span>
-              <span>🔢 Busca por código nacional</span>
               <span>🔍 Usa filtros avanzados por forma farmacéutica</span>
             </div>
           </div>
