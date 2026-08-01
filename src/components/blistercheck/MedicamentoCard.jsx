@@ -135,6 +135,12 @@ function MedicamentoCard({ medicamento, onClick }) {
               {medicamento.principio_activo}
             </span>
           )}
+          {clasificacion && (clasificacion.updated_at || clasificacion.fecha_clasificacion) && (
+            <span className="bc-med-detail">
+              <span className="bc-med-detail__label">Actualizado:</span>
+              {new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(clasificacion.updated_at || clasificacion.fecha_clasificacion))}
+            </span>
+          )}
         </div>
       </div>
 
