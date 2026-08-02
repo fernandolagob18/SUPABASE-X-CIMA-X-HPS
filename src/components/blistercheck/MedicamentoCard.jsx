@@ -67,9 +67,15 @@ function MedicamentoCard({ medicamento, onClick }) {
   const [clasificacion, setClasificacion] = useState(undefined); // undefined = cargando
 
   useEffect(() => {
+    let isCurrent = true;
     getClasificacion(medicamento.nregistro)
-      .then(setClasificacion)
-      .catch(() => setClasificacion(null));
+      .then(data => {
+        if (isCurrent) setClasificacion(data);
+      })
+      .catch(() => {
+        if (isCurrent) setClasificacion(null);
+      });
+    return () => { isCurrent = false; };
   }, [medicamento.nregistro]);
 
   const formaSimplificada = medicamento.forma_simplificada || medicamento.forma_farmaceutica;
