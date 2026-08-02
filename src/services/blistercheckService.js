@@ -177,6 +177,7 @@ export async function saveClasificacion(nregistro, clasificacion) {
     .upsert({
       nregistro,
       ...clasificacion,
+      updated_at: new Date().toISOString()
     }, { onConflict: 'nregistro' })
     .select('*')
     .single();
