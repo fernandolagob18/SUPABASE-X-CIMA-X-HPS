@@ -124,7 +124,12 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
       // Refrescar el timestamp con el dato devuelto por Supabase
       const newDate = saved?.updated_at || saved?.fecha_clasificacion;
       if (newDate) setUltimaActualizacion(newDate);
-      onClasificacionGuardada({ nregistro: medicamento.nregistro, ...form });
+      onClasificacionGuardada({ 
+        nregistro: medicamento.nregistro, 
+        ...form,
+        updated_at: saved?.updated_at,
+        fecha_clasificacion: saved?.fecha_clasificacion
+      });
       setTimeout(() => setSavedOk(false), 2000);
     } catch (err) {
       console.error('Error guardando clasificación:', err);
