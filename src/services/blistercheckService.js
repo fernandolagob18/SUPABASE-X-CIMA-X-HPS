@@ -76,14 +76,23 @@ export async function searchAvanzado(filtros = {}) {
 
     const nregistros = results.map(r => r.nregistro);
 
-    // Obtener clasificaciones. Si son más de 1000, dividimos en lotes por si acaso,
-    // aunque un buscador avanzado no suele devolver miles.
-    const { data: clasifData, error: clasifError } = await supabase
-      .from(CLASIFICACION_TABLE)
-      .select('*')
-      .in('nregistro', nregistros);
-      
-    if (clasifError) throw clasifError;
+    // Obtener clasificaciones. Si son más de 1000, dividimos en lotes para no exceder los límites de PostgREST
+    const CHUNK_SIZE = 900;
+    const chunks = [];
+    for (let i = 0; i < nregistros.length; i += CHUNK_SIZE) {
+      chunks.push(nregistros.slice(i, i + CHUNK_SIZE));
+    }
+
+    let clasifData = [];
+    for (const chunk of chunks) {
+      const { data: chunkData, error: chunkError } = await supabase
+        .from(CLASIFICACION_TABLE)
+        .select('*')
+        .in('nregistro', chunk);
+        
+      if (chunkError) throw chunkError;
+      if (chunkData) clasifData = clasifData.concat(chunkData);
+    }
 
     const clasifMap = new Map();
     (clasifData || []).forEach(c => clasifMap.set(c.nregistro, c));
