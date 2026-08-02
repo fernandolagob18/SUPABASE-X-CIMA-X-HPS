@@ -270,7 +270,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
                 <option value="todos">Todos los medicamentos</option>
                 <option value="reenvasado">Requieren reenvasado</option>
                 <option value="reetiquetado">Requieren reetiquetado</option>
-                <option value="apto_sdmdu">Son aptos para sdmdu</option>
+                <option value="apto_sdmdu">Aptos para SDMDU</option>
               </select>
             </div>
 
