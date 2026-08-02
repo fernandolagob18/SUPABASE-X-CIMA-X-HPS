@@ -121,8 +121,9 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
     try {
       const saved = await saveClasificacion(medicamento.nregistro, form);
       setSavedOk(true);
-      // Refrescar el timestamp con el updated_at devuelto por Supabase
-      if (saved?.updated_at) setUltimaActualizacion(saved.updated_at);
+      // Refrescar el timestamp con el dato devuelto por Supabase
+      const newDate = saved?.updated_at || saved?.fecha_clasificacion;
+      if (newDate) setUltimaActualizacion(newDate);
       onClasificacionGuardada({ nregistro: medicamento.nregistro, ...form });
       setTimeout(() => setSavedOk(false), 2000);
     } catch (err) {
