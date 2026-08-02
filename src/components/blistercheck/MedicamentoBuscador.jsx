@@ -27,6 +27,8 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     formaFarmaceutica: '',
     viaAdministracion: '',
     soloClasificados: false,
+    soloEnMiFarmacia: false,
+    estadoAcondicionamiento: 'todos',
   });
   const [formas, setFormas] = useState([]);
   const [vias, setVias] = useState([]);
@@ -43,6 +45,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   useEffect(() => {
     if (showAvanzado) return; // En modo avanzado no se dispara el simple
     clearTimeout(debounceRef.current);
+    let isCurrent = true;
 
     if (!query.trim() || query.trim().length < 2) {
       if (query.trim().length === 0) {
@@ -56,7 +59,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
       setLoading(true);
       setError(null);
       setBuscadoAlgunaVez(true);
-      let isCurrent = true;
+      
       try {
         const data = await searchSimple(query);
         if (isCurrent) setResultados(data);
@@ -70,14 +73,21 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
       }
     }, 400);
 
-    return () => clearTimeout(debounceRef.current);
+    return () => {
+      isCurrent = false;
+      clearTimeout(debounceRef.current);
+    };
   }, [query, showAvanzado]);
 
   // Ejecutar búsqueda avanzada
   const handleBuscarAvanzado = useCallback(async (filtrosOverride) => {
     // Evitar que el evento onClick se pase como filtrosOverride
     const f = (filtrosOverride && !filtrosOverride.nativeEvent && !filtrosOverride.type) ? filtrosOverride : filtros;
-    const tieneAlgunFiltro = Object.values(f).some(v => typeof v === 'boolean' ? v : v.trim() !== '');
+    const tieneAlgunFiltro = Object.entries(f).some(([key, v]) => {
+      if (typeof v === 'boolean') return v;
+      if (key === 'estadoAcondicionamiento' && v === 'todos') return false;
+      return v.trim() !== '';
+    });
     if (!tieneAlgunFiltro) return;
 
     setLoading(true);
@@ -95,7 +105,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   }, [filtros]);
 
   const handleLimpiarAvanzado = () => {
-    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', soloClasificados: false });
+    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', soloClasificados: false, soloEnMiFarmacia: false, estadoAcondicionamiento: 'todos' });
     setResultados([]);
     setBuscadoAlgunaVez(false);
   };
@@ -232,6 +242,36 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
               <label htmlFor="solo-clasificados" style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-text)', fontWeight: 600 }}>
                 Mostrar únicamente medicamentos que ya han sido clasificados
               </label>
+            </div>
+
+            <div className="bc-filtro-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.6rem', padding: '1rem', background: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)', borderRadius: '8px', marginBottom: '1rem' }}>
+              <input
+                type="checkbox"
+                id="solo-en-mi-farmacia"
+                checked={filtros.soloEnMiFarmacia}
+                onChange={e => handleFiltroChange('soloEnMiFarmacia', e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+              />
+              <label htmlFor="solo-en-mi-farmacia" style={{ cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-text)', fontWeight: 600 }}>
+                Mostrar únicamente medicamentos que están en mi farmacia
+              </label>
+            </div>
+
+            <div className="bc-filtro-field" style={{ marginBottom: '1rem' }}>
+              <label className="bc-filtro-label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem', fontWeight: 600 }}>
+                Estado de acondicionamiento
+              </label>
+              <select
+                className="bc-filtro-input"
+                style={{ cursor: 'pointer' }}
+                value={filtros.estadoAcondicionamiento}
+                onChange={e => handleFiltroChange('estadoAcondicionamiento', e.target.value)}
+              >
+                <option value="todos">Todos los medicamentos</option>
+                <option value="reenvasado">Requieren reenvasado</option>
+                <option value="reetiquetado">Requieren reetiquetado</option>
+                <option value="apto_sdmdu">Son aptos para sdmdu</option>
+              </select>
             </div>
 
             <div className="bc-avanzado-actions">

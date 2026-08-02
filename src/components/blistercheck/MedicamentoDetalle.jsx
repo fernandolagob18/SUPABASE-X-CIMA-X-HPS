@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package, RefreshCw, Clock } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package, RefreshCw, Clock, HelpCircle } from 'lucide-react';
 import { saveClasificacion, getAlternativasSDMDU } from '../../services/blistercheckService';
 
 // ── Componente tristate: Sí / No / Sin clasificar ────────────────────────────

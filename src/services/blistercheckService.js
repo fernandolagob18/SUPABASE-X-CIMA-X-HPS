@@ -52,18 +52,61 @@ export async function searchSimple(query) {
  * @param {string} filtros.viaAdministracion
  */
 export async function searchAvanzado(filtros = {}) {
-  // Usa RPC con unaccent para que la búsqueda sea insensible a tildes en todos los campos
+  // Búsqueda base usando el RPC
+  // Si hay filtros de estado o de farmacia, el medicamento tiene que estar clasificado por fuerza.
+  const requiereEstarClasificado = filtros.soloClasificados || 
+                                   filtros.soloEnMiFarmacia || 
+                                   (filtros.estadoAcondicionamiento && filtros.estadoAcondicionamiento !== 'todos');
+
   const { data, error } = await supabase.rpc('bc_search_avanzado', {
     p_nombre:             filtros.nombre?.trim()            || null,
     p_principio_activo:   filtros.principioActivo?.trim()   || null,
     p_laboratorio:        filtros.laboratorio?.trim()       || null,
     p_forma_farmaceutica: filtros.formaFarmaceutica?.trim() || null,
     p_via_administracion: filtros.viaAdministracion?.trim() || null,
-    p_solo_clasificados:  filtros.soloClasificados          ?? false,
+    p_solo_clasificados:  requiereEstarClasificado          ?? false,
   });
 
   if (error) throw error;
-  return data || [];
+  let results = data || [];
+
+  // Si hay filtros adicionales que dependen de la clasificación, necesitamos obtenerla
+  if (filtros.soloEnMiFarmacia || (filtros.estadoAcondicionamiento && filtros.estadoAcondicionamiento !== 'todos')) {
+    if (results.length === 0) return [];
+
+    const nregistros = results.map(r => r.nregistro);
+
+    // Obtener clasificaciones. Si son más de 1000, dividimos en lotes por si acaso,
+    // aunque un buscador avanzado no suele devolver miles.
+    const { data: clasifData, error: clasifError } = await supabase
+      .from(CLASIFICACION_TABLE)
+      .select('*')
+      .in('nregistro', nregistros);
+      
+    if (clasifError) throw clasifError;
+
+    const clasifMap = new Map();
+    (clasifData || []).forEach(c => clasifMap.set(c.nregistro, c));
+
+    results = results.filter(med => {
+      const clasif = clasifMap.get(med.nregistro);
+      if (!clasif) return false; // Si no tiene clasificación, no cumple
+
+      if (filtros.soloEnMiFarmacia && !clasif.en_mi_farmacia) {
+        return false;
+      }
+
+      if (filtros.estadoAcondicionamiento) {
+        if (filtros.estadoAcondicionamiento === 'reenvasado' && clasif.requiere_reenvasado !== true) return false;
+        if (filtros.estadoAcondicionamiento === 'reetiquetado' && clasif.requiere_reetiquetado !== true) return false;
+        if (filtros.estadoAcondicionamiento === 'apto_sdmdu' && clasif.apto_sdmdu_blister !== true) return false;
+      }
+
+      return true;
+    });
+  }
+
+  return results;
 }
 
 // ─── VALORES ÚNICOS PARA FILTROS ──────────────────────────────────────────────

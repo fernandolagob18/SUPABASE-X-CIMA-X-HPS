@@ -27,18 +27,29 @@ function BlisterCheckStats() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isCurrent = true;
     setLoading(true);
     Promise.all([
       getEstadisticasPorLaboratorio(soloMiFarmacia),
       getCatalogInfo(),
     ])
       .then(([statsData, info]) => {
-        setStats(statsData);
-        setCatalogInfo(info);
-        setError(null);
+        if (isCurrent) {
+          setStats(statsData);
+          setCatalogInfo(info);
+          setError(null);
+        }
       })
-      .catch(() => setError('Error cargando estadísticas.'))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (isCurrent) setError('Error cargando estadísticas.');
+      })
+      .finally(() => {
+        if (isCurrent) setLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [soloMiFarmacia]);
 
   const totalAptos = stats.reduce((s, r) => s + r.aptos_directos, 0);
