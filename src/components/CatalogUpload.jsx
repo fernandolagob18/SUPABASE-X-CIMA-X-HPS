@@ -112,7 +112,6 @@ const CatalogUpload = ({ onCatalogLoaded }) => {
                     <input
                         id="file-upload"
                         type="file"
-                        accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, text/csv, .xlsx, .xls"
                         onChange={handleFileUpload}
                         style={{ display: 'none' }}
                     />
