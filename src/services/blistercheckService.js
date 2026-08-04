@@ -406,53 +406,43 @@ export async function getAlternativasSDMDU(medicamento) {
 // ─── DESABASTECIMIENTOS ────────────────────────────────────────────────────────
 
 /**
- * Busca si un medicamento (por CN) tiene un desabastecimiento activo en Supabase.
- * Usado al abrir la ficha de detalle de un medicamento.
- * @param {string|null} cn - Código Nacional (6 dígitos)
- * @returns {Promise<Object|null>} - Fila de desabastecimiento o null si no aplica
+ * Busca si un medicamento tiene un desabastecimiento activo.
+ * Usa la RPC bc_get_desabastecimiento_by_nregistro que hace el JOIN en servidor:
+ *   blistercheck_catalogo.cn = desabastecimientos_activos.cn
+ * De este modo no dependemos de que el cliente tenga el cn disponible.
+ * @param {string|null} nregistro
+ * @returns {Promise<Object|null>}
  */
-export async function getDesabastecimientoByCN(cn) {
-  if (!cn) return null;
-  const normalizedCN = String(cn).replace(/\D/g, '').substring(0, 6);
-  if (!normalizedCN) return null;
+export async function getDesabastecimientoByNregistro(nregistro) {
+  if (!nregistro) return null;
 
   const { data, error } = await supabase
-    .from('desabastecimientos_activos')
-    .select('*')
-    .eq('cn', normalizedCN)
-    .maybeSingle();
+    .rpc('bc_get_desabastecimiento_by_nregistro', { p_nregistro: String(nregistro) });
 
   if (error) throw error;
-  return data; // null si no hay desabastecimiento activo
+  // rpc devuelve un array; tomamos el primer (y único) resultado
+  return (data && data.length > 0) ? data[0] : null;
 }
 
 /**
- * Dado un array de CNs, devuelve un Map<cn, shortage> con todos los que tienen
- * desabastecimiento activo. Usa una única consulta IN para máxima eficiencia.
- * Usado por el listado de resultados de búsqueda.
- * @param {string[]} cns
+ * Dado un array de nregistros, devuelve un Map<nregistro, shortage> con todos
+ * los que tienen desabastecimiento activo. Una única llamada RPC en el servidor.
+ * La RPC bc_get_desabastecimientos_by_nregistros hace el JOIN server-side:
+ *   blistercheck_catalogo.cn = desabastecimientos_activos.cn
+ * @param {string[]} nregistros
  * @returns {Promise<Map<string, Object>>}
  */
-export async function getDesabastecimientosByCNs(cns) {
-  if (!cns || cns.length === 0) return new Map();
-  // Normalizar y deduplicar
-  const normalized = [
-    ...new Set(
-      cns
-        .filter(Boolean)
-        .map(cn => String(cn).replace(/\D/g, '').substring(0, 6))
-        .filter(cn => cn.length > 0)
-    )
-  ];
-  if (normalized.length === 0) return new Map();
+export async function getDesabastecimientosByNregistros(nregistros) {
+  if (!nregistros || nregistros.length === 0) return new Map();
+  const validNregistros = [...new Set(nregistros.filter(Boolean).map(n => String(n)))];
+  if (validNregistros.length === 0) return new Map();
 
   const { data, error } = await supabase
-    .from('desabastecimientos_activos')
-    .select('*')
-    .in('cn', normalized);
+    .rpc('bc_get_desabastecimientos_by_nregistros', { p_nregistros: validNregistros });
 
   if (error) throw error;
+  // La RPC devuelve filas con nregistro + datos del desabastecimiento
   const map = new Map();
-  (data || []).forEach(row => map.set(String(row.cn), row));
+  (data || []).forEach(row => map.set(String(row.nregistro), row));
   return map;
 }
