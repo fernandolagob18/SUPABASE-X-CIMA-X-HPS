@@ -4,12 +4,13 @@ import MedicamentoBuscador from './MedicamentoBuscador';
 import MedicamentoDetalle from './MedicamentoDetalle';
 import BlisterCheckStats from './BlisterCheckStats';
 import BlisterCheckExport from './BlisterCheckExport';
-import { getCatalogInfo, getClasificacion } from '../../services/blistercheckService';
+import { getCatalogInfo, getClasificacion, getDesabastecimientoByCN } from '../../services/blistercheckService';
 
 function BlisterCheckApp({ onVolver }) {
   const [vistaActiva, setVistaActiva] = useState('search'); // 'search' | 'detail' | 'stats'
   const [medicamentoSeleccionado, setMedicamentoSeleccionado] = useState(null);
   const [clasificacionActual, setClasificacionActual] = useState(null);
+  const [desabastecimientoActual, setDesabastecimientoActual] = useState(null);
   const [catalogInfo, setCatalogInfo] = useState({ totalCatalogo: 0, totalClasificados: 0, enMiFarmacia: 0, ultimaSync: null });
   const [showExport, setShowExport] = useState(false);
 
@@ -23,12 +24,17 @@ function BlisterCheckApp({ onVolver }) {
   const handleSelectMedicamento = useCallback(async (medicamento) => {
     setMedicamentoSeleccionado(medicamento);
     setClasificacionActual(null);
+    setDesabastecimientoActual(null);
     setVistaActiva('detail');
     try {
-      const clas = await getClasificacion(medicamento.nregistro);
+      const [clas, desab] = await Promise.all([
+        getClasificacion(medicamento.nregistro),
+        getDesabastecimientoByCN(medicamento.cn),
+      ]);
       setClasificacionActual(clas);
+      setDesabastecimientoActual(desab);
     } catch (err) {
-      console.error('Error cargando clasificación:', err);
+      console.error('Error cargando datos del medicamento:', err);
     }
   }, []);
 
@@ -65,6 +71,7 @@ function BlisterCheckApp({ onVolver }) {
     setVistaActiva('search');
     setMedicamentoSeleccionado(null);
     setClasificacionActual(null);
+    setDesabastecimientoActual(null);
   }, []);
 
   return (
@@ -141,6 +148,7 @@ function BlisterCheckApp({ onVolver }) {
             key={medicamentoSeleccionado.nregistro}
             medicamento={medicamentoSeleccionado}
             clasificacion={clasificacionActual}
+            desabastecimiento={desabastecimientoActual}
             onClasificacionGuardada={handleClasificacionGuardada}
             onVolver={handleVolverABusqueda}
             onSelectAlternativa={handleSelectMedicamento}

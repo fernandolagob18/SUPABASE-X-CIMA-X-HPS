@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package, RefreshCw, Clock, HelpCircle } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Home, FileText, BookOpen, CheckCircle, XCircle, Circle, Save, Package, RefreshCw, Clock, HelpCircle, AlertTriangle, Calendar } from 'lucide-react';
 import { saveClasificacion, getAlternativasSDMDU } from '../../services/blistercheckService';
+import { isCriticalShortage } from '../../utils/shortageUtils';
+import { formatDate } from '../../utils/dateUtils';
 
 // ── Componente tristate: Sí / No / Sin clasificar ────────────────────────────
 function TristateToggle({ label, descripcion, value, onChange }) {
@@ -32,7 +34,7 @@ function TristateToggle({ label, descripcion, value, onChange }) {
   );
 }
 
-function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardada, onVolver, onSelectAlternativa }) {
+function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardada, onVolver, onSelectAlternativa, desabastecimiento }) {
   const [form, setForm] = useState({
     requiere_reenvasado:    clasificacion?.requiere_reenvasado    ?? null,
     requiere_reetiquetado:  clasificacion?.requiere_reetiquetado  ?? null,
@@ -196,6 +198,9 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
             <DataRow label="Vía de administración" value={medicamento.via_administracion} />
             <DataRow label="Tipo de prescripción" value={medicamento.tipo_prescripcion} />
           </div>
+
+          {/* Panel de desabastecimiento */}
+          {desabastecimiento && <DesabastecimientoPanel shortage={desabastecimiento} />}
 
           {/* Links a documentación */}
           <div className="bc-detalle-docs">
@@ -403,6 +408,71 @@ function DataRow({ label, value, mono }) {
     <div className="bc-data-row">
       <span className="bc-data-label">{label}</span>
       <span className={`bc-data-value ${mono ? 'mono' : ''}`}>{value}</span>
+    </div>
+  );
+}
+
+// ── Panel de desabastecimiento ────────────────────────────────────────────────
+function DesabastecimientoPanel({ shortage }) {
+  const [expanded, setExpanded] = useState(false);
+  const isCritical = isCriticalShortage({ activo: 1, observ: shortage.observaciones });
+
+  const hasLongObs = shortage.observaciones && shortage.observaciones.length > 220;
+  const obsText = hasLongObs && !expanded
+    ? `${shortage.observaciones.substring(0, 220)}...`
+    : shortage.observaciones;
+
+  const ffin = shortage.fecha_fin ? new Date(shortage.fecha_fin) : null;
+  const sinFechaFin = !ffin || ffin.getFullYear() > 2040;
+
+  return (
+    <div className={`bc-shortage-panel ${isCritical ? 'bc-shortage-panel--critical' : 'bc-shortage-panel--warning'}`}>
+      {/* Cabecera */}
+      <div className="bc-shortage-panel__header">
+        <AlertTriangle size={16} className="bc-shortage-panel__icon" />
+        <span className="bc-shortage-panel__title">
+          {isCritical ? 'Desabastecimiento Crítico Activo' : 'Desabastecimiento Activo'}
+        </span>
+        <span className={`bc-shortage-panel__pill ${isCritical ? 'pill--critical' : 'pill--warning'}`}>
+          {isCritical ? '🚨 Crítico' : '⚠️ Activo'}
+        </span>
+      </div>
+
+      {/* Nombre del desabastecimiento */}
+      {shortage.nombre && (
+        <p className="bc-shortage-panel__name">{shortage.nombre}</p>
+      )}
+
+      {/* Fechas */}
+      <div className="bc-shortage-panel__dates">
+        <span className="bc-shortage-date">
+          <Calendar size={13} />
+          <strong>Inicio:</strong>
+          {shortage.fecha_inicio ? formatDate(shortage.fecha_inicio) : '—'}
+        </span>
+        <span className="bc-shortage-arrow">→</span>
+        <span className="bc-shortage-date">
+          <Calendar size={13} />
+          <strong>Fin estimado:</strong>
+          {sinFechaFin ? 'Sin fecha estimada' : formatDate(shortage.fecha_fin)}
+        </span>
+      </div>
+
+      {/* Observaciones */}
+      {shortage.observaciones && (
+        <div className="bc-shortage-panel__obs">
+          <p className="bc-shortage-obs-text" style={{ whiteSpace: 'pre-wrap' }}>{obsText}</p>
+          {hasLongObs && (
+            <button
+              type="button"
+              className="bc-shortage-expand-btn"
+              onClick={() => setExpanded(prev => !prev)}
+            >
+              {expanded ? 'Ver menos ↑' : 'Ver más ↓'}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

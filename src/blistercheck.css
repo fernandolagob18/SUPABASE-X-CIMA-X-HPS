@@ -923,3 +923,160 @@
   .bc-alt-card.compatible:hover { background: rgba(16,185,129,0.1); }
   .bc-alt-card.pendiente:hover { background: rgba(8,145,178,0.1); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESABASTECIMIENTOS — Badges en tarjeta y panel en ficha de detalle
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Badges en MedicamentoCard ── */
+.bc-badge--shortage {
+  background: rgba(245, 158, 11, 0.13);
+  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.35);
+  animation: bc-shortage-pulse 2.4s ease-in-out infinite;
+}
+
+.bc-badge--shortage-critical {
+  background: rgba(239, 68, 68, 0.13);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.35);
+  animation: bc-shortage-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes bc-shortage-pulse {
+  0%, 100% { opacity: 1; box-shadow: none; }
+  50% { opacity: 0.75; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12); }
+}
+
+/* ── Panel en MedicamentoDetalle ── */
+.bc-shortage-panel {
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin: 1.25rem 0;
+  border-left: 4px solid transparent;
+}
+
+.bc-shortage-panel--warning {
+  background: rgba(245, 158, 11, 0.07);
+  border-left-color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-left: 4px solid #f59e0b;
+}
+
+.bc-shortage-panel--critical {
+  background: rgba(239, 68, 68, 0.07);
+  border-left-color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-left: 4px solid #ef4444;
+}
+
+.bc-shortage-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.bc-shortage-panel--warning .bc-shortage-panel__icon { color: #d97706; }
+.bc-shortage-panel--critical .bc-shortage-panel__icon { color: #dc2626; }
+
+.bc-shortage-panel__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  flex: 1;
+}
+.bc-shortage-panel--warning .bc-shortage-panel__title { color: #92400e; }
+.bc-shortage-panel--critical .bc-shortage-panel__title { color: #991b1b; }
+
+.bc-shortage-panel__pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.bc-shortage-panel__pill.pill--warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #92400e;
+}
+.bc-shortage-panel__pill.pill--critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #991b1b;
+}
+
+.bc-shortage-panel__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.75rem 0;
+  opacity: 0.85;
+}
+
+.bc-shortage-panel__dates {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.bc-shortage-date {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #64748b);
+}
+.bc-shortage-date strong { color: var(--color-text); margin-right: 0.15rem; }
+.bc-shortage-date svg { opacity: 0.6; flex-shrink: 0; }
+
+.bc-shortage-arrow {
+  font-size: 0.85rem;
+  opacity: 0.4;
+}
+
+.bc-shortage-panel__obs {
+  font-size: 0.8rem;
+  color: var(--color-text);
+  opacity: 0.85;
+  background: rgba(0,0,0,0.04);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+}
+
+.bc-shortage-obs-text {
+  margin: 0 0 0.35rem 0;
+  line-height: 1.55;
+}
+
+.bc-shortage-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.bc-shortage-expand-btn:hover { opacity: 1; }
+
+/* ── Dark mode overrides ── */
+@media (prefers-color-scheme: dark) {
+  .bc-shortage-panel--warning {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  .bc-shortage-panel--critical {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  .bc-shortage-panel__title { filter: brightness(1.3); }
+  .bc-shortage-panel__pill.pill--warning { background: rgba(245,158,11,0.2); color: #fbbf24; }
+  .bc-shortage-panel__pill.pill--critical { background: rgba(239,68,68,0.2); color: #f87171; }
+  .bc-shortage-panel__obs { background: rgba(255,255,255,0.04); }
+  .bc-badge--shortage { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.35); }
+  .bc-badge--shortage-critical { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.35); }
+}
+

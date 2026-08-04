@@ -1,6 +1,7 @@
 import { CheckCircle, AlertTriangle, Circle, Home, XCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getClasificacion } from '../../services/blistercheckService';
+import { isCriticalShortage } from '../../utils/shortageUtils';
 
 // Badge de clasificación reutilizable
 function ClasificacionBadge({ clasificacion }) {
@@ -63,7 +64,7 @@ function ClasificacionBadge({ clasificacion }) {
   );
 }
 
-function MedicamentoCard({ medicamento, onClick }) {
+function MedicamentoCard({ medicamento, onClick, desabastecimiento }) {
   const [clasificacion, setClasificacion] = useState(undefined); // undefined = cargando
 
   useEffect(() => {
@@ -111,6 +112,18 @@ function MedicamentoCard({ medicamento, onClick }) {
                 <Home size={10} /> Mi farmacia
               </span>
             )}
+            {desabastecimiento && (() => {
+              const isCritical = isCriticalShortage({ activo: 1, observ: desabastecimiento.observaciones });
+              return (
+                <span
+                  className={`bc-badge ${isCritical ? 'bc-badge--shortage-critical' : 'bc-badge--shortage'}`}
+                  title={`Desabastecimiento activo: ${desabastecimiento.nombre}`}
+                >
+                  <AlertTriangle size={11} />
+                  {isCritical ? 'Desab. crítico' : 'Desabastecimiento'}
+                </span>
+              );
+            })()}
           </div>
         </div>
 

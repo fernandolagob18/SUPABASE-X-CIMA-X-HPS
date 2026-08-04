@@ -402,3 +402,57 @@ export async function getAlternativasSDMDU(medicamento) {
 
   return { compatibles, pendientes };
 }
+
+// ─── DESABASTECIMIENTOS ────────────────────────────────────────────────────────
+
+/**
+ * Busca si un medicamento (por CN) tiene un desabastecimiento activo en Supabase.
+ * Usado al abrir la ficha de detalle de un medicamento.
+ * @param {string|null} cn - Código Nacional (6 dígitos)
+ * @returns {Promise<Object|null>} - Fila de desabastecimiento o null si no aplica
+ */
+export async function getDesabastecimientoByCN(cn) {
+  if (!cn) return null;
+  const normalizedCN = String(cn).replace(/\D/g, '').substring(0, 6);
+  if (!normalizedCN) return null;
+
+  const { data, error } = await supabase
+    .from('desabastecimientos_activos')
+    .select('*')
+    .eq('cn', normalizedCN)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data; // null si no hay desabastecimiento activo
+}
+
+/**
+ * Dado un array de CNs, devuelve un Map<cn, shortage> con todos los que tienen
+ * desabastecimiento activo. Usa una única consulta IN para máxima eficiencia.
+ * Usado por el listado de resultados de búsqueda.
+ * @param {string[]} cns
+ * @returns {Promise<Map<string, Object>>}
+ */
+export async function getDesabastecimientosByCNs(cns) {
+  if (!cns || cns.length === 0) return new Map();
+  // Normalizar y deduplicar
+  const normalized = [
+    ...new Set(
+      cns
+        .filter(Boolean)
+        .map(cn => String(cn).replace(/\D/g, '').substring(0, 6))
+        .filter(cn => cn.length > 0)
+    )
+  ];
+  if (normalized.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from('desabastecimientos_activos')
+    .select('*')
+    .in('cn', normalized);
+
+  if (error) throw error;
+  const map = new Map();
+  (data || []).forEach(row => map.set(String(row.cn), row));
+  return map;
+}
