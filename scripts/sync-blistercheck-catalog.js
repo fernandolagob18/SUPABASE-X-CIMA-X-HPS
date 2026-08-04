@@ -86,12 +86,12 @@ async function fetchAllPresentacionesComercializadas() {
     console.log(''); // Nueva línea tras el progreso
   }
 
-  // Filtrar: solo presentaciones con cn, comercializadas y que no sean envases clínicos
+  // Filtrar: solo presentaciones con cn, comercializadas (incluyendo envases clínicos)
   const validas = allResults.filter(item =>
-    item.cn && item.comerc === true && !item.envaseClinico
+    item.cn && item.comerc === true
   );
 
-  console.log(`✅ Descargadas ${allResults.length} presentaciones → ${validas.length} válidas (comercializadas, no envase clínico)`);
+  console.log(`✅ Descargadas ${allResults.length} presentaciones → ${validas.length} válidas (comercializadas)`);
   return validas;
 }
 
