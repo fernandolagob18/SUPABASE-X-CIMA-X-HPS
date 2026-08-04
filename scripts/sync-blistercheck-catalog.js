@@ -40,6 +40,50 @@ async function fetchWithRetry(url, maxRetries = 3) {
   }
 }
 
+// ─── Obtener todos los medicamentos comercializados de CIMA (para enriquecer metadata) ───
+async function fetchAllMedicamentosComercializados() {
+  console.log('🔍 Consultando API CIMA — medicamentos comercializados...');
+  const cacheBuster = `&t=${Date.now()}`;
+  let allResults = [];
+
+  const firstData = await fetchWithRetry(
+    `${CIMA_API_BASE}/medicamentos?comerc=1&pagina=1&tamanioPagina=${PAGE_SIZE}${cacheBuster}`
+  );
+
+  const totalItems = firstData.totalFilas || 0;
+  if (totalItems === 0) {
+    throw new Error('La API devolvió 0 medicamentos — posible error del servidor.');
+  }
+
+  allResults = firstData.resultados || [];
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  console.log(`📦 Total: ${totalItems} medicamentos en ${totalPages} páginas`);
+
+  if (totalPages > 1) {
+    const remainingPages = [];
+    for (let i = 2; i <= totalPages; i++) remainingPages.push(i);
+
+    for (let i = 0; i < remainingPages.length; i += CONCURRENCY_LIMIT) {
+      const chunk = remainingPages.slice(i, i + CONCURRENCY_LIMIT);
+      const chunkResults = await Promise.all(
+        chunk.map(async (pageNum) => {
+          const data = await fetchWithRetry(
+            `${CIMA_API_BASE}/medicamentos?comerc=1&pagina=${pageNum}&tamanioPagina=${PAGE_SIZE}${cacheBuster}`
+          );
+          return data.resultados || [];
+        })
+      );
+      chunkResults.forEach(r => { allResults = allResults.concat(r); });
+      const loaded = Math.min(1 + i + chunk.length, totalPages);
+      process.stdout.write(`\r   Páginas cargadas: ${loaded}/${totalPages}`);
+    }
+    console.log('');
+  }
+
+  console.log(`✅ Descargados ${allResults.length} medicamentos de CIMA`);
+  return allResults;
+}
+
 // ─── Obtener todas las presentaciones comercializadas de CIMA ────────────────
 async function fetchAllPresentacionesComercializadas() {
   console.log('🔍 Consultando API CIMA — presentaciones comercializadas...');
@@ -97,24 +141,26 @@ async function fetchAllPresentacionesComercializadas() {
 
 // ─── Transformar datos de CIMA al formato de Supabase ────────────────
 // Fuente: /presentaciones — cada fila es una presentación (CN único)
-function transformPresentacion(item) {
+function transformPresentacion(item, medPadre) {
   const fotoEnvase = (item.fotos || []).find(f => f.tipo === 'materialas');
   const fotoForma  = (item.fotos || []).find(f => f.tipo === 'formafarmac');
   const docFT      = (item.docs  || []).find(d => d.tipo === 1);
   const docProspe  = (item.docs  || []).find(d => d.tipo === 2);
-  const primeraVia = (item.viasAdministracion || [])[0];
+  
+  // Usamos las vías de administración y formas del medicamento padre si existen
+  const primeraVia = (medPadre?.viasAdministracion || item.viasAdministracion || [])[0];
 
   return {
     cn:                 String(item.cn),              // PK — siempre presente (/presentaciones garantiza cn)
     nregistro:          String(item.nregistro),       // referencia al medicamento padre
     nombre:             item.nombre || '',             // nombre de la PRESENTACIÓN (incluye tamaño)
-    laboratorio:        item.labtitular || item.labcomercializador || null,
+    laboratorio:        item.labtitular || item.labcomercializador || medPadre?.labtitular || null,
     dosis:              item.dosis || (item.principiosActivos ? item.principiosActivos.map(p => `${p.cantidad || ''} ${p.unidad || ''}`.trim()).join(' / ') : null),
-    principio_activo:   item.pactivos || item.vtm?.nombre || null,
-    forma_farmaceutica: item.formaFarmaceutica?.nombre || null,
-    forma_simplificada: item.formaFarmaceuticaSimplificada?.nombre || null,
+    principio_activo:   item.pactivos || item.vtm?.nombre || medPadre?.vtm?.nombre || null,
+    forma_farmaceutica: medPadre?.formaFarmaceutica?.nombre || item.formaFarmaceutica?.nombre || null,
+    forma_simplificada: medPadre?.formaFarmaceuticaSimplificada?.nombre || item.formaFarmaceuticaSimplificada?.nombre || null,
     via_administracion: primeraVia?.nombre || null,
-    tipo_prescripcion:  item.cpresc || null,
+    tipo_prescripcion:  item.cpresc || medPadre?.cpresc || null,
     foto_envase_url:    fotoEnvase?.url || null,
     foto_forma_url:     fotoForma?.url  || null,
     url_ficha_tecnica:  docFT?.url     || null,
@@ -124,8 +170,8 @@ function transformPresentacion(item) {
 }
 
 // ─── Upsert por lotes en Supabase ────────────────────────────────────
-async function upsertCatalogo(supabase, presentaciones) {
-  const rows = presentaciones.map(transformPresentacion);
+async function upsertCatalogo(supabase, presentaciones, medicamentosMap) {
+  const rows = presentaciones.map(p => transformPresentacion(p, medicamentosMap.get(String(p.nregistro))));
   console.log(`📝 Iniciando UPSERT de ${rows.length} registros en blistercheck_catalogo...`);
 
   let upsertados = 0;
@@ -162,10 +208,15 @@ async function main() {
 
   try {
     // 1. Descargar datos de CIMA (con reintentos y protecciones)
+    const medicamentos = await fetchAllMedicamentosComercializados();
     const presentaciones = await fetchAllPresentacionesComercializadas();
 
-    // 2. Guardar en Supabase (solo si obtuvimos datos reales)
-    await upsertCatalogo(supabase, presentaciones);
+    // 1.5 Crear mapa de medicamentos para enriquecer las presentaciones
+    const medMap = new Map();
+    medicamentos.forEach(m => medMap.set(String(m.nregistro), m));
+
+    // 2. Guardar en Supabase enriquecido
+    await upsertCatalogo(supabase, presentaciones, medMap);
 
     console.log('');
     console.log('🎉 Sincronización completada correctamente.');
