@@ -109,7 +109,7 @@ function transformPresentacion(item) {
     nregistro:          String(item.nregistro),       // referencia al medicamento padre
     nombre:             item.nombre || '',             // nombre de la PRESENTACIÓN (incluye tamaño)
     laboratorio:        item.labtitular || item.labcomercializador || null,
-    dosis:              item.dosis || null,
+    dosis:              item.dosis || (item.principiosActivos ? item.principiosActivos.map(p => `${p.cantidad || ''} ${p.unidad || ''}`.trim()).join(' / ') : null),
     principio_activo:   item.pactivos || item.vtm?.nombre || null,
     forma_farmaceutica: item.formaFarmaceutica?.nombre || null,
     forma_simplificada: item.formaFarmaceuticaSimplificada?.nombre || null,
