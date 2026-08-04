@@ -69,7 +69,7 @@ function MedicamentoCard({ medicamento, onClick, desabastecimiento }) {
 
   useEffect(() => {
     let isCurrent = true;
-    getClasificacion(medicamento.nregistro)
+    getClasificacion(medicamento.cn)
       .then(data => {
         if (isCurrent) setClasificacion(data);
       })
@@ -77,7 +77,7 @@ function MedicamentoCard({ medicamento, onClick, desabastecimiento }) {
         if (isCurrent) setClasificacion(null);
       });
     return () => { isCurrent = false; };
-  }, [medicamento.nregistro]);
+  }, [medicamento.cn]);
 
   const formaSimplificada = medicamento.forma_simplificada || medicamento.forma_farmaceutica;
   const esCandidatoSDMDU = ['COMPRIMIDO', 'CAPSULA'].some(f =>
