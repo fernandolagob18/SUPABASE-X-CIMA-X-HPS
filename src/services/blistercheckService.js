@@ -59,6 +59,7 @@ export async function searchAvanzado(filtros = {}) {
                                    (filtros.estadoAcondicionamiento && filtros.estadoAcondicionamiento !== 'todos');
 
   const { data, error } = await supabase.rpc('bc_search_avanzado', {
+    p_cn:                 filtros.cn?.trim()                || null,
     p_nombre:             filtros.nombre?.trim()            || null,
     p_principio_activo:   filtros.principioActivo?.trim()   || null,
     p_laboratorio:        filtros.laboratorio?.trim()       || null,

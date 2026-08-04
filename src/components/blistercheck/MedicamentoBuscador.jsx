@@ -25,6 +25,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   // Buscador avanzado
   const [showAvanzado, setShowAvanzado] = useState(false);
   const [filtros, setFiltros] = useState({
+    cn: '',
     nombre: '',
     principioActivo: '',
     laboratorio: '',
@@ -163,7 +164,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
               <input
                 type="text"
                 className="bc-search-input"
-                placeholder="Buscar por nombre o principio activo..."
+                placeholder="Buscar por nombre, principio activo o código nacional (CN)..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 autoFocus
@@ -212,6 +213,17 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
                   placeholder="Ej: Omeprazol..."
                   value={filtros.nombre}
                   onChange={e => handleFiltroChange('nombre', e.target.value)}
+                />
+              </div>
+
+              <div className="bc-filtro-field">
+                <label className="bc-filtro-label">Código Nacional (CN)</label>
+                <input
+                  type="text"
+                  className="bc-filtro-input"
+                  placeholder="Ej: 726291..."
+                  value={filtros.cn}
+                  onChange={e => handleFiltroChange('cn', e.target.value)}
                 />
               </div>
 
