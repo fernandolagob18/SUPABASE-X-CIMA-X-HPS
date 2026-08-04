@@ -40,26 +40,26 @@ async function fetchWithRetry(url, maxRetries = 3) {
   }
 }
 
-// ─── Obtener todos los medicamentos comercializados de CIMA ──────────────────
-async function fetchAllMedicamentosComercializados() {
-  console.log('🔍 Consultando API CIMA — medicamentos comercializados...');
+// ─── Obtener todas las presentaciones comercializadas de CIMA ────────────────
+async function fetchAllPresentacionesComercializadas() {
+  console.log('🔍 Consultando API CIMA — presentaciones comercializadas...');
   const cacheBuster = `&t=${Date.now()}`;
   let allResults = [];
 
   // Primera página para obtener el total
   const firstData = await fetchWithRetry(
-    `${CIMA_API_BASE}/medicamentos?comerc=1&pagina=1&tamanioPagina=${PAGE_SIZE}${cacheBuster}`
+    `${CIMA_API_BASE}/presentaciones?comerc=1&pagina=1&tamanioPagina=${PAGE_SIZE}${cacheBuster}`
   );
 
   const totalItems = firstData.totalFilas || 0;
 
   if (totalItems === 0) {
-    throw new Error('La API devolvió 0 medicamentos — posible error del servidor. Abortando para proteger la BD.');
+    throw new Error('La API devolvió 0 presentaciones — posible error del servidor. Abortando para proteger la BD.');
   }
 
   allResults = firstData.resultados || [];
   const totalPages = Math.ceil(totalItems / PAGE_SIZE);
-  console.log(`📦 Total: ${totalItems} medicamentos en ${totalPages} páginas`);
+  console.log(`📦 Total: ${totalItems} presentaciones en ${totalPages} páginas`);
 
   // Páginas restantes con concurrencia controlada
   if (totalPages > 1) {
@@ -72,7 +72,7 @@ async function fetchAllMedicamentosComercializados() {
       const chunkResults = await Promise.all(
         chunk.map(async (pageNum) => {
           const data = await fetchWithRetry(
-            `${CIMA_API_BASE}/medicamentos?comerc=1&pagina=${pageNum}&tamanioPagina=${PAGE_SIZE}${cacheBuster}`
+            `${CIMA_API_BASE}/presentaciones?comerc=1&pagina=${pageNum}&tamanioPagina=${PAGE_SIZE}${cacheBuster}`
           );
           return data.resultados || [];
         })
@@ -86,40 +86,46 @@ async function fetchAllMedicamentosComercializados() {
     console.log(''); // Nueva línea tras el progreso
   }
 
-  console.log(`✅ Descargados ${allResults.length} medicamentos de CIMA`);
-  return allResults;
+  // Filtrar: solo presentaciones con cn, comercializadas y que no sean envases clínicos
+  const validas = allResults.filter(item =>
+    item.cn && item.comerc === true && !item.envaseClinico
+  );
+
+  console.log(`✅ Descargadas ${allResults.length} presentaciones → ${validas.length} válidas (comercializadas, no envase clínico)`);
+  return validas;
 }
 
-// ─── Transformar datos de CIMA al formato de Supabase ────────────────────────
-function transformMedicamento(item) {
+// ─── Transformar datos de CIMA al formato de Supabase ────────────────
+// Fuente: /presentaciones — cada fila es una presentación (CN único)
+function transformPresentacion(item) {
   const fotoEnvase = (item.fotos || []).find(f => f.tipo === 'materialas');
-  const fotoForma = (item.fotos || []).find(f => f.tipo === 'formafarmac');
-  const docFT = (item.docs || []).find(d => d.tipo === 1);
-  const docProspecto = (item.docs || []).find(d => d.tipo === 2);
+  const fotoForma  = (item.fotos || []).find(f => f.tipo === 'formafarmac');
+  const docFT      = (item.docs  || []).find(d => d.tipo === 1);
+  const docProspe  = (item.docs  || []).find(d => d.tipo === 2);
   const primeraVia = (item.viasAdministracion || [])[0];
 
   return {
-    nregistro:          String(item.nregistro),
-    cn:                 item.cn ? String(item.cn) : null,
-    nombre:             item.nombre || '',
+    cn:                 String(item.cn),              // PK — siempre presente (/presentaciones garantiza cn)
+    nregistro:          String(item.nregistro),       // referencia al medicamento padre
+    nombre:             item.nombre || '',             // nombre de la PRESENTACIÓN (incluye tamaño)
     laboratorio:        item.labtitular || item.labcomercializador || null,
     dosis:              item.dosis || null,
-    principio_activo:   item.vtm?.nombre || null,
+    principio_activo:   item.pactivos || item.vtm?.nombre || null,
     forma_farmaceutica: item.formaFarmaceutica?.nombre || null,
     forma_simplificada: item.formaFarmaceuticaSimplificada?.nombre || null,
     via_administracion: primeraVia?.nombre || null,
     tipo_prescripcion:  item.cpresc || null,
     foto_envase_url:    fotoEnvase?.url || null,
-    foto_forma_url:     fotoForma?.url || null,
-    url_ficha_tecnica:  docFT?.url || null,
-    url_prospecto:      docProspecto?.url || null,
+    foto_forma_url:     fotoForma?.url  || null,
+    url_ficha_tecnica:  docFT?.url     || null,
+    url_prospecto:      docProspe?.url  || null,
     last_sync:          new Date().toISOString(),
   };
 }
 
-// ─── Upsert por lotes en Supabase ────────────────────────────────────────────
-async function upsertCatalogo(supabase, medicamentos) {
-  const rows = medicamentos.map(transformMedicamento);
+// ─── Upsert por lotes en Supabase ────────────────────────────────────
+async function upsertCatalogo(supabase, presentaciones) {
+  const rows = presentaciones.map(transformPresentacion);
   console.log(`📝 Iniciando UPSERT de ${rows.length} registros en blistercheck_catalogo...`);
 
   let upsertados = 0;
@@ -127,7 +133,7 @@ async function upsertCatalogo(supabase, medicamentos) {
     const batch = rows.slice(i, i + UPSERT_BATCH_SIZE);
     const { error } = await supabase
       .from('blistercheck_catalogo')
-      .upsert(batch, { onConflict: 'nregistro' });
+      .upsert(batch, { onConflict: 'cn' });   // ← PK ahora es cn
 
     if (error) {
       throw new Error(`Error en UPSERT (lote ${i / UPSERT_BATCH_SIZE + 1}): ${error.message}`);
@@ -137,7 +143,7 @@ async function upsertCatalogo(supabase, medicamentos) {
     process.stdout.write(`\r   Registros guardados: ${upsertados}/${rows.length}`);
   }
   console.log(''); // Nueva línea
-  console.log(`✅ UPSERT completado: ${upsertados} medicamentos actualizados en Supabase`);
+  console.log(`✅ UPSERT completado: ${upsertados} presentaciones actualizadas en Supabase`);
 }
 
 // ─── Punto de entrada principal ───────────────────────────────────────────────
@@ -156,10 +162,10 @@ async function main() {
 
   try {
     // 1. Descargar datos de CIMA (con reintentos y protecciones)
-    const medicamentos = await fetchAllMedicamentosComercializados();
+    const presentaciones = await fetchAllPresentacionesComercializadas();
 
     // 2. Guardar en Supabase (solo si obtuvimos datos reales)
-    await upsertCatalogo(supabase, medicamentos);
+    await upsertCatalogo(supabase, presentaciones);
 
     console.log('');
     console.log('🎉 Sincronización completada correctamente.');

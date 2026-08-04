@@ -79,8 +79,8 @@ export async function searchAvanzado(filtros = {}) {
     // Obtener clasificaciones. Si son más de 1000, dividimos en lotes para no exceder los límites de PostgREST
     const CHUNK_SIZE = 900;
     const chunks = [];
-    for (let i = 0; i < nregistros.length; i += CHUNK_SIZE) {
-      chunks.push(nregistros.slice(i, i + CHUNK_SIZE));
+    for (let i = 0; i < cns.length; i += CHUNK_SIZE) {
+      chunks.push(cns.slice(i, i + CHUNK_SIZE));
     }
 
     let clasifData = [];
@@ -88,27 +88,27 @@ export async function searchAvanzado(filtros = {}) {
       const { data: chunkData, error: chunkError } = await supabase
         .from(CLASIFICACION_TABLE)
         .select('*')
-        .in('nregistro', chunk);
+        .in('cn', chunk);
         
       if (chunkError) throw chunkError;
       if (chunkData) clasifData = clasifData.concat(chunkData);
     }
 
     const clasifMap = new Map();
-    (clasifData || []).forEach(c => clasifMap.set(c.nregistro, c));
+    (clasifData || []).forEach(c => clasifMap.set(c.cn, c));
 
     results = results.filter(med => {
-      const clasif = clasifMap.get(med.nregistro);
-      if (!clasif) return false; // Si no tiene clasificación, no cumple
+      const clasif = clasifMap.get(med.cn);
+      if (!clasif) return false;
 
       if (filtros.soloEnMiFarmacia && !clasif.en_mi_farmacia) {
         return false;
       }
 
       if (filtros.estadoAcondicionamiento) {
-        if (filtros.estadoAcondicionamiento === 'reenvasado' && clasif.requiere_reenvasado !== true) return false;
+        if (filtros.estadoAcondicionamiento === 'reenvasado'   && clasif.requiere_reenvasado  !== true) return false;
         if (filtros.estadoAcondicionamiento === 'reetiquetado' && clasif.requiere_reetiquetado !== true) return false;
-        if (filtros.estadoAcondicionamiento === 'apto_sdmdu' && clasif.apto_sdmdu_blister !== true) return false;
+        if (filtros.estadoAcondicionamiento === 'apto_sdmdu'   && clasif.apto_sdmdu_blister   !== true) return false;
       }
 
       return true;
@@ -163,36 +163,37 @@ export async function getViasAdministracion() {
 // ─── CLASIFICACIÓN ────────────────────────────────────────────────────────────
 
 /**
- * Obtiene la clasificación de un medicamento (null si no existe)
+ * Obtiene la clasificación de una presentación (null si no existe).
+ * Clave: cn (Código Nacional) — la tabla usa cn como PK.
  */
-export async function getClasificacion(nregistro) {
+export async function getClasificacion(cn) {
   const { data, error } = await supabase
     .from(CLASIFICACION_TABLE)
     .select('*')
-    .eq('nregistro', nregistro)
+    .eq('cn', cn)
     .maybeSingle();
 
   if (error) throw error;
-  return data; // null si no clasificado aún
+  return data;
 }
 
 /**
- * Guarda o actualiza la clasificación de un medicamento.
+ * Guarda o actualiza la clasificación de una presentación.
  * Devuelve el registro guardado (incluyendo updated_at) para refrescar la UI.
  */
-export async function saveClasificacion(nregistro, clasificacion) {
+export async function saveClasificacion(cn, clasificacion) {
   const { data, error } = await supabase
     .from(CLASIFICACION_TABLE)
     .upsert({
-      nregistro,
+      cn,
       ...clasificacion,
       updated_at: new Date().toISOString()
-    }, { onConflict: 'nregistro' })
+    }, { onConflict: 'cn' })
     .select('*')
     .single();
 
   if (error) throw error;
-  return data; // Incluye updated_at y fecha_clasificacion
+  return data;
 }
 
 
@@ -406,43 +407,42 @@ export async function getAlternativasSDMDU(medicamento) {
 // ─── DESABASTECIMIENTOS ────────────────────────────────────────────────────────
 
 /**
- * Busca si un medicamento tiene un desabastecimiento activo.
- * Usa la RPC bc_get_desabastecimiento_by_nregistro que hace el JOIN en servidor:
- *   blistercheck_catalogo.cn = desabastecimientos_activos.cn
- * De este modo no dependemos de que el cliente tenga el cn disponible.
- * @param {string|null} nregistro
+ * Busca si una presentación (por CN) tiene un desabastecimiento activo.
+ * JOIN directo posible porque blistercheck_catalogo.cn = desabastecimientos_activos.cn.
+ * @param {string|null} cn - Código Nacional de la presentación
  * @returns {Promise<Object|null>}
  */
-export async function getDesabastecimientoByNregistro(nregistro) {
-  if (!nregistro) return null;
+export async function getDesabastecimientoByCN(cn) {
+  if (!cn) return null;
 
   const { data, error } = await supabase
-    .rpc('bc_get_desabastecimiento_by_nregistro', { p_nregistro: String(nregistro) });
+    .from('desabastecimientos_activos')
+    .select('*')
+    .eq('cn', String(cn))
+    .maybeSingle();
 
   if (error) throw error;
-  // rpc devuelve un array; tomamos el primer (y único) resultado
-  return (data && data.length > 0) ? data[0] : null;
+  return data;
 }
 
 /**
- * Dado un array de nregistros, devuelve un Map<nregistro, shortage> con todos
- * los que tienen desabastecimiento activo. Una única llamada RPC en el servidor.
- * La RPC bc_get_desabastecimientos_by_nregistros hace el JOIN server-side:
- *   blistercheck_catalogo.cn = desabastecimientos_activos.cn
- * @param {string[]} nregistros
+ * Dado un array de CNs, devuelve un Map<cn, shortage> con todos los que tienen
+ * desabastecimiento activo. Una única consulta IN.
+ * @param {string[]} cns
  * @returns {Promise<Map<string, Object>>}
  */
-export async function getDesabastecimientosByNregistros(nregistros) {
-  if (!nregistros || nregistros.length === 0) return new Map();
-  const validNregistros = [...new Set(nregistros.filter(Boolean).map(n => String(n)))];
-  if (validNregistros.length === 0) return new Map();
+export async function getDesabastecimientosByCNs(cns) {
+  if (!cns || cns.length === 0) return new Map();
+  const validCNs = [...new Set(cns.filter(Boolean).map(cn => String(cn)))];
+  if (validCNs.length === 0) return new Map();
 
   const { data, error } = await supabase
-    .rpc('bc_get_desabastecimientos_by_nregistros', { p_nregistros: validNregistros });
+    .from('desabastecimientos_activos')
+    .select('*')
+    .in('cn', validCNs);
 
   if (error) throw error;
-  // La RPC devuelve filas con nregistro + datos del desabastecimiento
   const map = new Map();
-  (data || []).forEach(row => map.set(String(row.nregistro), row));
+  (data || []).forEach(row => map.set(String(row.cn), row));
   return map;
 }

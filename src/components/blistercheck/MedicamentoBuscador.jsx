@@ -7,7 +7,7 @@ import {
   searchAvanzado,
   getFormasFarmaceuticas,
   getViasAdministracion,
-  getDesabastecimientosByNregistros,
+  getDesabastecimientosByCNs,
 } from '../../services/blistercheckService';
 
 
@@ -48,11 +48,9 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
       setShortageMap(new Map());
       return;
     }
-    // Usamos nregistro como clave porque check-shortages.js almacena
-    // normalizeCN(item.cn || item.nregistro) en el campo `cn` de la tabla
-    const nregistros = results.map(m => m.nregistro).filter(Boolean);
+    const cns = results.map(m => m.cn).filter(Boolean);
     try {
-      const map = await getDesabastecimientosByNregistros(nregistros);
+      const map = await getDesabastecimientosByCNs(cns);
       setShortageMap(map);
     } catch (err) {
       console.error('Error comprobando desabastecimientos:', err);
@@ -359,13 +357,13 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
             </p>
             <div className="bc-resultados-grid">
               {resultados.map(med => {
-                // La RPC devuelve el Map con nregistro exacto como clave
-                const desabastecimiento = med.nregistro
-                  ? (shortageMap.get(String(med.nregistro)) || null)
+                // El servicio devuelve el Map con cn como clave
+                const desabastecimiento = med.cn
+                  ? (shortageMap.get(String(med.cn)) || null)
                   : null;
                 return (
                   <MedicamentoCard
-                    key={med.nregistro}
+                    key={med.cn}
                     medicamento={med}
                     onClick={() => onSelectMedicamento(med)}
                     desabastecimiento={desabastecimiento}

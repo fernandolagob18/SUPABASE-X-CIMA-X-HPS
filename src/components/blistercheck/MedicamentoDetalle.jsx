@@ -121,13 +121,12 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
   const handleGuardar = useCallback(async () => {
     setSaving(true);
     try {
-      const saved = await saveClasificacion(medicamento.nregistro, form);
+      const saved = await saveClasificacion(medicamento.cn, form);  // clasificación por CN
       setSavedOk(true);
-      // Refrescar el timestamp con el dato devuelto por Supabase
       const newDate = saved?.updated_at || saved?.fecha_clasificacion;
       if (newDate) setUltimaActualizacion(newDate);
       onClasificacionGuardada({ 
-        nregistro: medicamento.nregistro, 
+        cn: medicamento.cn,
         ...form,
         updated_at: saved?.updated_at,
         fecha_clasificacion: saved?.fecha_clasificacion
@@ -139,7 +138,7 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
     } finally {
       setSaving(false);
     }
-  }, [medicamento.nregistro, form, onClasificacionGuardada]);
+  }, [medicamento.cn, form, onClasificacionGuardada]);
 
   const fotoEnvase = medicamento.foto_envase_url;
   const fotoForma = medicamento.foto_forma_url;

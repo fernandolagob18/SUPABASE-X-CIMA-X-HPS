@@ -4,7 +4,7 @@ import MedicamentoBuscador from './MedicamentoBuscador';
 import MedicamentoDetalle from './MedicamentoDetalle';
 import BlisterCheckStats from './BlisterCheckStats';
 import BlisterCheckExport from './BlisterCheckExport';
-import { getCatalogInfo, getClasificacion, getDesabastecimientoByNregistro } from '../../services/blistercheckService';
+import { getCatalogInfo, getClasificacion, getDesabastecimientoByCN } from '../../services/blistercheckService';
 
 function BlisterCheckApp({ onVolver }) {
   const [vistaActiva, setVistaActiva] = useState('search'); // 'search' | 'detail' | 'stats'
@@ -28,8 +28,8 @@ function BlisterCheckApp({ onVolver }) {
     setVistaActiva('detail');
     try {
       const [clas, desab] = await Promise.all([
-        getClasificacion(medicamento.nregistro),
-        getDesabastecimientoByNregistro(medicamento.nregistro),
+        getClasificacion(medicamento.cn),              // clasificación por CN
+        getDesabastecimientoByCN(medicamento.cn),      // desabastecimiento por CN (directo)
       ]);
       setClasificacionActual(clas);
       setDesabastecimientoActual(desab);
