@@ -162,7 +162,6 @@ function BlisterCheckStats() {
                     <th>Clasificados</th>
                     <th>Aptos directos</th>
                     <th>Con intervención</th>
-                    <th>Sin clasificar</th>
                     <th>Score SDMDU</th>
                   </tr>
                 </thead>
@@ -176,7 +175,6 @@ function BlisterCheckStats() {
                       <td className="bc-table-num">{lab.total_clasificados}</td>
                       <td className="bc-table-num bc-table-num--green">{lab.aptos_directos}</td>
                       <td className="bc-table-num bc-table-num--amber">{lab.requieren_intervencion}</td>
-                      <td className="bc-table-num bc-table-num--muted">{lab.pendientes}</td>
                       <td className="bc-table-score">
                         <ScoreBar score={lab.score_sdmdu} />
                       </td>
