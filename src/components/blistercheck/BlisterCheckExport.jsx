@@ -53,7 +53,7 @@ function generateCsv(data) {
   const rows = data.map(row => {
     const cat = row.blistercheck_catalogo || {};
     return [
-      row.nregistro,
+      cat.nregistro,
       cat.cn,
       cat.nombre,
       cat.laboratorio,

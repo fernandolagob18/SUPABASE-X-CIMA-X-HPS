@@ -228,7 +228,7 @@ export async function getEstadisticasPorLaboratorio(soloMiFarmacia = false) {
   let query = supabase
     .from(CLASIFICACION_TABLE)
     .select(`
-      nregistro,
+      cn,
       requiere_reenvasado,
       requiere_reetiquetado,
       apto_sdmdu_blister,
@@ -328,7 +328,7 @@ export async function getExportData(modo = 'clasificados') {
   let query = supabase
     .from(CLASIFICACION_TABLE)
     .select(`
-      nregistro,
+      cn,
       requiere_reenvasado,
       requiere_reetiquetado,
       apto_sdmdu_blister,
@@ -338,7 +338,7 @@ export async function getExportData(modo = 'clasificados') {
       fecha_clasificacion,
       updated_at,
       blistercheck_catalogo (
-        cn, nombre, laboratorio, dosis, principio_activo,
+        cn, nregistro, nombre, laboratorio, dosis, principio_activo,
         forma_farmaceutica, forma_simplificada, via_administracion, tipo_prescripcion
       )
     `)
