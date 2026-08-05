@@ -142,34 +142,28 @@ export async function searchAvanzado(filtros = {}) {
 // ─── VALORES ÚNICOS PARA FILTROS ──────────────────────────────────────────────
 
 async function fetchAllDistinct(column) {
-  const { count } = await supabase
-    .from(CATALOG_TABLE)
-    .select('*', { count: 'exact', head: true });
-    
-  const total = count || 17000;
-  const limit = 1000;
-  const numPages = Math.ceil(total / limit);
-  const promises = [];
-  
-  for (let i = 0; i < numPages; i++) {
-    promises.push(
-      supabase
-        .from(CATALOG_TABLE)
-        .select(column)
-        .not(column, 'is', null)
-        .range(i * limit, (i + 1) * limit - 1)
-    );
-  }
-  
-  const results = await Promise.all(promises);
+  // Obtenemos todos los valores distintos paginando secuencialmente.
+  // Nota: la opción ideal es una RPC en Supabase con SELECT DISTINCT para evitar
+  // transferir filas completas, pero esta solución es segura y no genera un
+  // burst de 17 consultas simultáneas como hacía la versión anterior.
   const uniqueVals = new Set();
-  
-  results.forEach(res => {
-    if (res.data) {
-      res.data.forEach(row => uniqueVals.add(row[column]));
-    }
-  });
-  
+  let page = 0;
+  const PAGE_SIZE = 1000;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(CATALOG_TABLE)
+      .select(column)
+      .not(column, 'is', null)
+      .order(column)
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+    if (error) throw error;
+    (data || []).forEach(row => uniqueVals.add(row[column]));
+    if ((data || []).length < PAGE_SIZE) break;
+    page++;
+  }
+
   return Array.from(uniqueVals).filter(Boolean).sort((a, b) => a.localeCompare(b));
 }
 
@@ -203,13 +197,21 @@ export async function getClasificacion(cn) {
  * Devuelve el registro guardado (incluyendo updated_at) para refrescar la UI.
  */
 export async function saveClasificacion(cn, clasificacion) {
+  // Pick explícito de columnas conocidas para evitar errores si el form tiene campos extra
+  const payload = {
+    cn,
+    requiere_reenvasado:   clasificacion.requiere_reenvasado   ?? null,
+    requiere_reetiquetado: clasificacion.requiere_reetiquetado ?? null,
+    apto_sdmdu_blister:    clasificacion.apto_sdmdu_blister    ?? null,
+    solo_envase_clinico:   clasificacion.solo_envase_clinico   ?? false,
+    en_mi_farmacia:        clasificacion.en_mi_farmacia        ?? false,
+    notas:                 clasificacion.notas                 ?? null,
+    updated_at:            new Date().toISOString(),
+  };
+
   const { data, error } = await supabase
     .from(CLASIFICACION_TABLE)
-    .upsert({
-      cn,
-      ...clasificacion,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'cn' })
+    .upsert(payload, { onConflict: 'cn' })
     .select('*')
     .single();
 
@@ -222,20 +224,30 @@ export async function saveClasificacion(cn, clasificacion) {
  * Obtiene todas las clasificaciones (para stats y export)
  */
 export async function getAllClasificaciones() {
-  const { data, error } = await supabase
-    .from(CLASIFICACION_TABLE)
-    .select(`
-      *,
-      blistercheck_catalogo (
-        nombre, laboratorio, dosis, principio_activo,
-        forma_farmaceutica, forma_simplificada, via_administracion,
-        tipo_prescripcion, cn
-      )
-    `)
-    .order('fecha_clasificacion', { ascending: false });
+  // Paginamos para soportar más de 1000 clasificaciones
+  let allData = [];
+  let page = 0;
+  const PAGE_SIZE = 1000;
+  while (true) {
+    const { data, error } = await supabase
+      .from(CLASIFICACION_TABLE)
+      .select(`
+        *,
+        blistercheck_catalogo (
+          nombre, laboratorio, dosis, principio_activo,
+          forma_farmaceutica, forma_simplificada, via_administracion,
+          tipo_prescripcion, cn
+        )
+      `)
+      .order('fecha_clasificacion', { ascending: false })
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-  if (error) throw error;
-  return data || [];
+    if (error) throw error;
+    allData = allData.concat(data || []);
+    if ((data || []).length < PAGE_SIZE) break;
+    page++;
+  }
+  return allData;
 }
 
 // ─── ESTADÍSTICAS POR LABORATORIO ─────────────────────────────────────────────
@@ -342,36 +354,49 @@ export async function getCatalogInfo() {
  * @param {string} modo 'todos' | 'clasificados' | 'mi_farmacia'
  */
 export async function getExportData(modo = 'clasificados') {
-  let query = supabase
-    .from(CLASIFICACION_TABLE)
-    .select(`
-      cn,
-      requiere_reenvasado,
-      requiere_reetiquetado,
-      apto_sdmdu_blister,
-      solo_envase_clinico,
-      en_mi_farmacia,
-      notas,
-      fecha_clasificacion,
-      updated_at,
-      blistercheck_catalogo (
-        cn, nregistro, nombre, laboratorio, dosis, principio_activo,
-        forma_farmaceutica, forma_simplificada, via_administracion, tipo_prescripcion
-      )
-    `)
-    .order('fecha_clasificacion', { ascending: false });
+  const SELECT = `
+    cn,
+    requiere_reenvasado,
+    requiere_reetiquetado,
+    apto_sdmdu_blister,
+    solo_envase_clinico,
+    en_mi_farmacia,
+    notas,
+    fecha_clasificacion,
+    updated_at,
+    blistercheck_catalogo (
+      cn, nregistro, nombre, laboratorio, dosis, principio_activo,
+      forma_farmaceutica, forma_simplificada, via_administracion, tipo_prescripcion
+    )
+  `;
 
-  if (modo === 'clasificados') {
-    query = query.or('requiere_reenvasado.not.is.null,requiere_reetiquetado.not.is.null,apto_sdmdu_blister.not.is.null');
+  // Paginamos para soportar más de 1000 clasificaciones sin truncar el CSV
+  let allData = [];
+  let page = 0;
+  const PAGE_SIZE = 1000;
+
+  while (true) {
+    let query = supabase
+      .from(CLASIFICACION_TABLE)
+      .select(SELECT)
+      .order('fecha_clasificacion', { ascending: false })
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+    if (modo === 'clasificados') {
+      query = query.or('requiere_reenvasado.not.is.null,requiere_reetiquetado.not.is.null,apto_sdmdu_blister.not.is.null');
+    }
+    if (modo === 'mi_farmacia') {
+      query = query.eq('en_mi_farmacia', true);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    allData = allData.concat(data || []);
+    if ((data || []).length < PAGE_SIZE) break;
+    page++;
   }
 
-  if (modo === 'mi_farmacia') {
-    query = query.eq('en_mi_farmacia', true);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data || [];
+  return allData;
 }
 
 // ─── ALTERNATIVAS SDMDU ────────────────────────────────────────────────────────

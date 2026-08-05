@@ -130,12 +130,14 @@ async function fetchAllPresentacionesComercializadas() {
     console.log(''); // Nueva línea tras el progreso
   }
 
-  // Filtrar: solo presentaciones con cn, comercializadas (incluyendo envases clínicos)
+  // Filtrar: solo presentaciones con cn numérico válido y comercializadas (incluyendo envases clínicos)
   const validas = allResults.filter(item =>
-    item.cn && item.comerc === true
+    item.cn &&
+    item.comerc === true &&
+    /^\d{5,9}$/.test(String(item.cn).trim())  // CN debe ser numérico de 5-9 dígitos
   );
 
-  console.log(`✅ Descargadas ${allResults.length} presentaciones → ${validas.length} válidas (comercializadas)`);
+  console.log(`✅ Descargadas ${allResults.length} presentaciones → ${validas.length} válidas (comercializadas con CN numérico)`);
   return validas;
 }
 
