@@ -118,6 +118,14 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
     setSavedOk(false);
   }, []);
 
+  const handleToggle = useCallback((campo) => {
+    setForm(prev => {
+      const nuevoValor = !prev[campo];
+      return { ...prev, [campo]: nuevoValor };
+    });
+    setSavedOk(false);
+  }, []);
+
   const handleGuardar = useCallback(async () => {
     setSaving(true);
     try {
@@ -257,7 +265,7 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
             <hr className="bc-clas-divider" />
 
             {/* Envase Clínico */}
-            <label className="bc-farmacia-toggle">
+            <div className="bc-farmacia-toggle" onClick={() => handleToggle('solo_envase_clinico')}>
               <div className="bc-farmacia-info">
                 <Package size={16} className="bc-ec-icon" />
                 <div>
@@ -270,19 +278,16 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
                   <span className="bc-farmacia-desc">La clasificación aplica únicamente al envase clínico (hospitalario)</span>
                 </div>
               </div>
-              <div
-                className={`bc-toggle-switch ${form.solo_envase_clinico ? 'on-ec' : ''}`}
-                onClick={() => handleChange('solo_envase_clinico', !form.solo_envase_clinico)}
-              >
+              <div className={`bc-toggle-switch ${form.solo_envase_clinico ? 'on-ec' : ''}`}>
                 <div className="bc-toggle-thumb" />
               </div>
-            </label>
+            </div>
 
             {/* Separador */}
             <hr className="bc-clas-divider" />
 
             {/* Mi farmacia */}
-            <label className="bc-farmacia-toggle">
+            <div className="bc-farmacia-toggle" onClick={() => handleToggle('en_mi_farmacia')}>
               <div className="bc-farmacia-info">
                 <Home size={16} className="bc-farmacia-icon" />
                 <div>
@@ -290,13 +295,10 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
                   <span className="bc-farmacia-desc">Usamos este medicamento en nuestra farmacia</span>
                 </div>
               </div>
-              <div
-                className={`bc-toggle-switch ${form.en_mi_farmacia ? 'on' : ''}`}
-                onClick={() => handleChange('en_mi_farmacia', !form.en_mi_farmacia)}
-              >
+              <div className={`bc-toggle-switch ${form.en_mi_farmacia ? 'on' : ''}`}>
                 <div className="bc-toggle-thumb" />
               </div>
-            </label>
+            </div>
 
             {/* Separador */}
             <hr className="bc-clas-divider" />
