@@ -41,6 +41,32 @@ export async function searchSimple(query) {
   return data || [];
 }
 
+/**
+ * Obtiene clasificaciones en batch para un array de CNs.
+ * Devuelve un Map<cn, clasificacion> para evitar N+1 queries en las tarjetas de resultados.
+ */
+export async function getClasificacionesByCNs(cns) {
+  if (!cns || cns.length === 0) return new Map();
+  const validCNs = [...new Set(cns.filter(Boolean))];
+  if (validCNs.length === 0) return new Map();
+
+  const CHUNK_SIZE = 900;
+  let allData = [];
+  for (let i = 0; i < validCNs.length; i += CHUNK_SIZE) {
+    const chunk = validCNs.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await supabase
+      .from(CLASIFICACION_TABLE)
+      .select('*')
+      .in('cn', chunk);
+    if (error) throw error;
+    if (data) allData = allData.concat(data);
+  }
+
+  const map = new Map();
+  allData.forEach(c => map.set(c.cn, c));
+  return map;
+}
+
 // ─── BÚSQUEDA AVANZADA ────────────────────────────────────────────────────────
 
 /**
@@ -355,7 +381,7 @@ export async function getExportData(modo = 'clasificados') {
  * y las clasifica en compatibles (apto SDMDU) y pendientes de evaluar.
  */
 export async function getAlternativasSDMDU(medicamento) {
-  const { nregistro, principio_activo, dosis, forma_farmaceutica, via_administracion } = medicamento;
+  const { cn, principio_activo, dosis, forma_farmaceutica, via_administracion } = medicamento;
   
   if (!principio_activo || !dosis || !forma_farmaceutica || !via_administracion) {
     return { compatibles: [], pendientes: [] };
@@ -375,7 +401,7 @@ export async function getAlternativasSDMDU(medicamento) {
     .eq('dosis', dosis)
     .eq('forma_farmaceutica', forma_farmaceutica)
     .eq('via_administracion', via_administracion)
-    .neq('nregistro', nregistro);
+    .neq('cn', cn);  // excluir el medicamento actual por CN (PK real)
 
   if (error) throw error;
 

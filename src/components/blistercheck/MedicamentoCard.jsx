@@ -64,20 +64,26 @@ function ClasificacionBadge({ clasificacion }) {
   );
 }
 
-function MedicamentoCard({ medicamento, onClick, desabastecimiento }) {
-  const [clasificacion, setClasificacion] = useState(undefined); // undefined = cargando
+function MedicamentoCard({ medicamento, onClick, desabastecimiento, clasificacion: clasificacionProp }) {
+  // Si el padre ya nos pasa la clasificación (batch), úsala directamente.
+  // Si no (ej: uso standalone), la cargamos individualmente.
+  const [clasificacionLocal, setClasificacionLocal] = useState(clasificacionProp !== undefined ? clasificacionProp : undefined);
 
   useEffect(() => {
+    // Si el prop cambia (batch recargado), actualizar estado local
+    if (clasificacionProp !== undefined) {
+      setClasificacionLocal(clasificacionProp);
+      return;
+    }
+    // Fallback: fetch individual cuando no viene del padre
     let isCurrent = true;
     getClasificacion(medicamento.cn)
-      .then(data => {
-        if (isCurrent) setClasificacion(data);
-      })
-      .catch(() => {
-        if (isCurrent) setClasificacion(null);
-      });
+      .then(data => { if (isCurrent) setClasificacionLocal(data); })
+      .catch(() => { if (isCurrent) setClasificacionLocal(null); });
     return () => { isCurrent = false; };
-  }, [medicamento.cn]);
+  }, [medicamento.cn, clasificacionProp]);
+
+  const clasificacion = clasificacionLocal;
 
   const formaSimplificada = medicamento.forma_simplificada || medicamento.forma_farmaceutica;
   const esCandidatoSDMDU = ['COMPRIMIDO', 'CAPSULA'].some(f =>

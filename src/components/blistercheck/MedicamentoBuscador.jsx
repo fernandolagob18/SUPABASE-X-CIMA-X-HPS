@@ -8,6 +8,7 @@ import {
   getFormasFarmaceuticas,
   getViasAdministracion,
   getDesabastecimientosByCNs,
+  getClasificacionesByCNs,
 } from '../../services/blistercheckService';
 
 
@@ -21,6 +22,8 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
 
   // Mapa CN → desabastecimiento para los resultados actuales (1 sola consulta batch)
   const [shortageMap, setShortageMap] = useState(new Map());
+  // Mapa CN → clasificacion para los resultados actuales (1 sola consulta batch, evita N queries)
+  const [clasificacionMap, setClasificacionMap] = useState(new Map());
 
   // Buscador avanzado
   const [showAvanzado, setShowAvanzado] = useState(false);
@@ -59,6 +62,21 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
     }
   }, []);
 
+  const fetchClasificaciones = useCallback(async (results) => {
+    if (!results || results.length === 0) {
+      setClasificacionMap(new Map());
+      return;
+    }
+    const cns = results.map(m => m.cn).filter(Boolean);
+    try {
+      const map = await getClasificacionesByCNs(cns);
+      setClasificacionMap(map);
+    } catch (err) {
+      console.error('Error cargando clasificaciones batch:', err);
+      setClasificacionMap(new Map());
+    }
+  }, []);
+
   // Cargar opciones de filtros al montar
   useEffect(() => {
     getFormasFarmaceuticas().then(setFormas).catch(() => {});
@@ -89,6 +107,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
         if (isCurrent) {
           setResultados(data);
           fetchShortages(data);
+          fetchClasificaciones(data);
         }
       } catch (err) {
         if (isCurrent) {
@@ -125,6 +144,7 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
       const data = await searchAvanzado(f);
       setResultados(data);
       fetchShortages(data);
+      fetchClasificaciones(data);
     } catch (err) {
       setError('Error al buscar. Comprueba tu conexión.');
       setResultados([]);
@@ -135,9 +155,10 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
   }, [filtros, fetchShortages]);
 
   const handleLimpiarAvanzado = () => {
-    setFiltros({ nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', soloClasificados: false, soloEnMiFarmacia: false, estadoAcondicionamiento: 'todos' });
+    setFiltros({ cn: '', nombre: '', principioActivo: '', laboratorio: '', formaFarmaceutica: '', viaAdministracion: '', soloClasificados: false, soloEnMiFarmacia: false, estadoAcondicionamiento: 'todos' });
     setResultados([]);
     setShortageMap(new Map());
+    setClasificacionMap(new Map());
     setBuscadoAlgunaVez(false);
   };
 
@@ -365,20 +386,19 @@ function MedicamentoBuscador({ onSelectMedicamento }) {
         {!loading && resultados.length > 0 && (
           <>
             <p className="bc-resultados-count">
-              {resultados.length === 50 ? 'Mostrando los primeros 50 resultados' : `${resultados.length} resultado${resultados.length !== 1 ? 's' : ''}`}
+              {resultados.length} resultado{resultados.length !== 1 ? 's' : ''}
             </p>
             <div className="bc-resultados-grid">
               {resultados.map(med => {
-                // El servicio devuelve el Map con cn como clave
-                const desabastecimiento = med.cn
-                  ? (shortageMap.get(String(med.cn)) || null)
-                  : null;
+                const desabastecimiento = med.cn ? (shortageMap.get(String(med.cn)) || null) : null;
+                const clasificacion = med.cn ? (clasificacionMap.get(med.cn) ?? undefined) : undefined;
                 return (
                   <MedicamentoCard
                     key={med.cn}
                     medicamento={med}
                     onClick={() => onSelectMedicamento(med)}
                     desabastecimiento={desabastecimiento}
+                    clasificacion={clasificacion}
                   />
                 );
               })}
