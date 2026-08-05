@@ -156,10 +156,13 @@ function transformPresentacion(item, medPadre) {
   // Si por algún motivo no hay medPadre (medicamento no encontrado en el mapa),
   // se intenta extraer de /presentaciones como último recurso.
 
-  // Principio activo: vtm.nombre es la denominación normalizada de la AEMPS
-  const principioActivo = medPadre?.vtm?.nombre
-    || medPadre?.pactivos
-    || item.pactivos
+  // Principio activo: preferimos el nombre normalizado del primer principio activo
+  // medPadre?.principiosActivos es el array [{nombre, cantidad, unidad},...]
+  const principioActivo =
+    (medPadre?.principiosActivos?.length
+      ? medPadre.principiosActivos.map(p => p.nombre).filter(Boolean).join(' / ')
+      : null)
+    || medPadre?.vtm?.nombre
     || item.vtm?.nombre
     || null;
 
@@ -266,8 +269,8 @@ async function main() {
     console.error(`   Motivo: ${err.message}`);
     console.error('   Se reintentará en la próxima ejecución programada (14 días).');
     console.log('═══════════════════════════════════════════════════');
-    // exit(0) para que GitHub Actions no lo marque como fallo rojo
-    process.exit(0);
+    // exit(1) para que GitHub Actions marque el workflow como FALLIDO y envíe notificación
+    process.exit(1);
   }
 }
 

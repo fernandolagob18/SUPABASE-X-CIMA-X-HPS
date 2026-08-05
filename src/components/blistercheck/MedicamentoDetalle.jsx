@@ -371,7 +371,7 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
                   <h4 className="bc-alt-group-title compatible"><CheckCircle size={14} /> Compatibles comprobadas</h4>
                   <div className="bc-alt-cards">
                     {alternativas.compatibles.map(alt => (
-                      <div key={alt.nregistro} className="bc-alt-card compatible" onClick={() => onSelectAlternativa && onSelectAlternativa(alt)}>
+                      <div key={alt.cn} className="bc-alt-card compatible" onClick={() => onSelectAlternativa && onSelectAlternativa(alt)}>
                         <span className="bc-alt-name">{alt.nombre}</span>
                         <span className="bc-alt-lab">{alt.laboratorio}</span>
                       </div>
@@ -386,7 +386,7 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
                   <p className="bc-alt-group-desc">Estos medicamentos tienen las mismas características. ¡Anímate a probarlos para ver si son compatibles!</p>
                   <div className="bc-alt-cards">
                     {alternativas.pendientes.map(alt => (
-                      <div key={alt.nregistro} className="bc-alt-card pendiente" onClick={() => onSelectAlternativa && onSelectAlternativa(alt)}>
+                      <div key={alt.cn} className="bc-alt-card pendiente" onClick={() => onSelectAlternativa && onSelectAlternativa(alt)}>
                         <span className="bc-alt-name">{alt.nombre}</span>
                         <span className="bc-alt-lab">{alt.laboratorio}</span>
                       </div>
