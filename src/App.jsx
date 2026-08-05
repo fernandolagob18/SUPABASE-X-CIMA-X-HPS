@@ -156,13 +156,17 @@ function App() {
     };
 
     try {
-      // 1. Fetch Active Shortages
-      const dbShortages = await fetchAllRecords('desabastecimientos_activos', '*');
+      // Parallelize the 3 large table fetches
+      const [dbShortages, catData, segData] = await Promise.all([
+        fetchAllRecords('desabastecimientos_activos', '*'),
+        fetchAllRecords('catalogo_hospital', 'cn'),
+        fetchAllRecords('seguimiento_medicamentos', '*')
+      ]);
 
       // Mapear de vuelta al formato que espera el UI
       const formattedShortages = (dbShortages || []).map(row => ({
         cn: row.cn,
-        normalizedCN: row.cn,
+        normalizedCN: String(row.cn),
         nombre: row.nombre,
         observ: row.observaciones,
         fini: row.fecha_inicio,
@@ -171,21 +175,16 @@ function App() {
         criticidad: row.criticidad
       }));
 
-      // 2. Fetch Catalog
-      const catData = await fetchAllRecords('catalogo_hospital', 'cn');
-
-      const newCatSet = new Set(catData.map(c => c.cn));
+      // Force CNs to String to ensure Set.has() works correctly later when comparing with strings
+      const newCatSet = new Set(catData.map(c => String(c.cn)));
       setCatalogCNs(newCatSet);
-
-      // 3. Fetch Tracking Data
-      const segData = await fetchAllRecords('seguimiento_medicamentos', '*');
 
       const newManagedSet = new Set();
       const newNotesObj = {};
 
       segData.forEach(row => {
-        if (row.estado_gestion) newManagedSet.add(row.cn);
-        if (row.notas_seguimiento) newNotesObj[row.cn] = row.notas_seguimiento;
+        if (row.estado_gestion) newManagedSet.add(String(row.cn));
+        if (row.notas_seguimiento) newNotesObj[String(row.cn)] = row.notas_seguimiento;
       });
 
       setManagedCNs(newManagedSet);
