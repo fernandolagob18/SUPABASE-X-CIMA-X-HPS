@@ -75,17 +75,13 @@ export async function searchAvanzado(filtros = {}) {
   if (filtros.soloEnMiFarmacia || (filtros.estadoAcondicionamiento && filtros.estadoAcondicionamiento !== 'todos')) {
     if (results.length === 0) return [];
 
-    const nregistros = results.map(r => r.nregistro);
+    const cns = results.map(r => r.cn);  // la PK ahora es cn
 
-    // Obtener clasificaciones. Si son más de 1000, dividimos en lotes para no exceder los límites de PostgREST
+    // Obtener clasificaciones en lotes para no exceder los límites de PostgREST
     const CHUNK_SIZE = 900;
-    const chunks = [];
-    for (let i = 0; i < cns.length; i += CHUNK_SIZE) {
-      chunks.push(cns.slice(i, i + CHUNK_SIZE));
-    }
-
     let clasifData = [];
-    for (const chunk of chunks) {
+    for (let i = 0; i < cns.length; i += CHUNK_SIZE) {
+      const chunk = cns.slice(i, i + CHUNK_SIZE);
       const { data: chunkData, error: chunkError } = await supabase
         .from(CLASIFICACION_TABLE)
         .select('*')
@@ -102,9 +98,7 @@ export async function searchAvanzado(filtros = {}) {
       const clasif = clasifMap.get(med.cn);
       if (!clasif) return false;
 
-      if (filtros.soloEnMiFarmacia && !clasif.en_mi_farmacia) {
-        return false;
-      }
+      if (filtros.soloEnMiFarmacia && !clasif.en_mi_farmacia) return false;
 
       if (filtros.estadoAcondicionamiento) {
         if (filtros.estadoAcondicionamiento === 'reenvasado'   && clasif.requiere_reenvasado  !== true) return false;
