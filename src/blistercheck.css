@@ -714,6 +714,7 @@
 .bc-summary-card--green .bc-summary-num { color: var(--color-success); }
 .bc-summary-card--amber .bc-summary-num { color: var(--color-warning); }
 .bc-summary-card--blue .bc-summary-num { color: #0891b2; }
+.bc-summary-card--red .bc-summary-num { color: #ef4444; }
 
 .bc-podium { padding: 1.5rem; margin-bottom: 1.5rem; }
 .bc-podium-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; }

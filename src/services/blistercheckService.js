@@ -225,62 +225,82 @@ export async function getAllClasificaciones() {
  * Solo incluye laboratorios con al menos 1 medicamento clasificado
  */
 export async function getEstadisticasPorLaboratorio(soloMiFarmacia = false) {
-  let query = supabase
-    .from(CLASIFICACION_TABLE)
+  // Consultamos desde el CATÁLOGO haciendo un left-join a clasificación.
+  // Así "sin clasificar" = presentaciones del catálogo SIN fila en clasificación.
+  const { data: catalogData, error: catalogError } = await supabase
+    .from(CATALOG_TABLE)
     .select(`
       cn,
-      requiere_reenvasado,
-      requiere_reetiquetado,
-      apto_sdmdu_blister,
-      en_mi_farmacia,
-      blistercheck_catalogo ( laboratorio )
+      laboratorio,
+      blistercheck_clasificacion (
+        cn,
+        requiere_reenvasado,
+        requiere_reetiquetado,
+        apto_sdmdu_blister,
+        en_mi_farmacia
+      )
     `);
 
-  if (soloMiFarmacia) {
-    query = query.eq('en_mi_farmacia', true);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
+  if (catalogError) throw catalogError;
 
   // Agrupar por laboratorio
   const labMap = new Map();
 
-  (data || []).forEach(row => {
-    const lab = row.blistercheck_catalogo?.laboratorio || 'Sin laboratorio';
+  (catalogData || []).forEach(item => {
+    const lab = item.laboratorio || 'Sin laboratorio';
+    const clas = Array.isArray(item.blistercheck_clasificacion)
+      ? item.blistercheck_clasificacion[0]
+      : item.blistercheck_clasificacion;
+
+    // Filtro "solo mi farmacia": solo contamos si tiene clasificación con en_mi_farmacia=true
+    if (soloMiFarmacia && clas?.en_mi_farmacia !== true) return;
+
     if (!labMap.has(lab)) {
       labMap.set(lab, {
         laboratorio: lab,
+        total_catalogo: 0,
         total_clasificados: 0,
-        aptos_directos: 0,       // apto_sdmdu_blister = true
-        requieren_intervencion: 0, // requiere_reenvasado=true OR requiere_reetiquetado=true
-        pendientes: 0,           // todos null
+        aptos_directos: 0,
+        requieren_intervencion: 0,
+        pendientes: 0,  // sin fila de clasificación, o con todos los campos null
       });
     }
 
     const entry = labMap.get(lab);
+    entry.total_catalogo++;
 
-    const sinClasificar = row.apto_sdmdu_blister === null && row.requiere_reenvasado === null && row.requiere_reetiquetado === null;
-
-    if (!sinClasificar) {
-      entry.total_clasificados++;
+    if (!clas) {
+      // Sin fila en clasificación = no clasificado
+      entry.pendientes++;
+      return;
     }
 
-    const esApto = row.apto_sdmdu_blister === true;
-    const requiereIntervencion = row.requiere_reenvasado === true || row.requiere_reetiquetado === true;
+    const sinClasificar = clas.apto_sdmdu_blister === null
+      && clas.requiere_reenvasado === null
+      && clas.requiere_reetiquetado === null;
 
-    if (esApto) entry.aptos_directos++;
-    else if (requiereIntervencion) entry.requieren_intervencion++;
-    else if (sinClasificar) entry.pendientes++;
+    if (sinClasificar) {
+      entry.pendientes++;
+      return;
+    }
+
+    entry.total_clasificados++;
+    if (clas.apto_sdmdu_blister === true) {
+      entry.aptos_directos++;
+    } else if (clas.requiere_reenvasado === true || clas.requiere_reetiquetado === true) {
+      entry.requieren_intervencion++;
+    }
   });
 
-  // Calcular score y convertir a array ordenado
-  const result = Array.from(labMap.values()).map(lab => ({
-    ...lab,
-    score_sdmdu: lab.total_clasificados > 0
-      ? Math.round((lab.aptos_directos / lab.total_clasificados) * 100)
-      : 0,
-  }));
+  // Solo mostrar laboratorios que tienen al menos 1 clasificado
+  const result = Array.from(labMap.values())
+    .filter(lab => lab.total_clasificados > 0)
+    .map(lab => ({
+      ...lab,
+      score_sdmdu: lab.total_clasificados > 0
+        ? Math.round((lab.aptos_directos / lab.total_clasificados) * 100)
+        : 0,
+    }));
 
   result.sort((a, b) => b.score_sdmdu - a.score_sdmdu || b.total_clasificados - a.total_clasificados);
   return result;

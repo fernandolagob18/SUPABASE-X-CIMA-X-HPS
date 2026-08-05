@@ -100,6 +100,12 @@ function BlisterCheckStats() {
             <span className="bc-summary-num">{catalogInfo.enMiFarmacia}</span>
             <span className="bc-summary-label">En mi farmacia</span>
           </div>
+          <div className="bc-summary-card glass-panel bc-summary-card--red">
+            <span className="bc-summary-num">
+              {(catalogInfo.totalCatalogo - catalogInfo.totalClasificados).toLocaleString('es-ES')}
+            </span>
+            <span className="bc-summary-label">Sin clasificar</span>
+          </div>
         </div>
       )}
 
