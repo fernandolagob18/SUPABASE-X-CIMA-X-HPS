@@ -139,31 +139,66 @@ async function fetchAllPresentacionesComercializadas() {
   return validas;
 }
 
-// ─── Transformar datos de CIMA al formato de Supabase ────────────────
-// Fuente: /presentaciones — cada fila es una presentación (CN único)
+// ─── Transformar datos de CIMA al formato de Supabase ────────────────────────
+//
+// Fuente de verdad por campo:
+//   CN, nombre envase, fotos, docs  ← /presentaciones   (item)
+//   dosis, p.activo, forma, vía     ← /medicamentos     (medPadre, keyed by nregistro)
+//
 function transformPresentacion(item, medPadre) {
+  // ── Fotos y documentos: solo disponibles en /presentaciones ──────────────────
   const fotoEnvase = (item.fotos || []).find(f => f.tipo === 'materialas');
   const fotoForma  = (item.fotos || []).find(f => f.tipo === 'formafarmac');
   const docFT      = (item.docs  || []).find(d => d.tipo === 1);
   const docProspe  = (item.docs  || []).find(d => d.tipo === 2);
-  
-  // Usamos las vías de administración y formas del medicamento padre si existen
-  const primeraVia = (medPadre?.viasAdministracion || item.viasAdministracion || [])[0];
+
+  // ── Metadata clínica: fuente autoritativa = /medicamentos (medPadre) ─────────
+  // Si por algún motivo no hay medPadre (medicamento no encontrado en el mapa),
+  // se intenta extraer de /presentaciones como último recurso.
+
+  // Principio activo: vtm.nombre es la denominación normalizada de la AEMPS
+  const principioActivo = medPadre?.vtm?.nombre
+    || medPadre?.pactivos
+    || item.pactivos
+    || item.vtm?.nombre
+    || null;
+
+  // Dosis: /medicamentos devuelve el campo "dosis" directamente (ej: "500 mg")
+  // /presentaciones NO tiene este campo, pero tiene principiosActivos[].cantidad+unidad
+  const dosis = medPadre?.dosis
+    || (medPadre?.principiosActivos?.length
+        ? medPadre.principiosActivos.map(p => `${p.cantidad || ''} ${p.unidad || ''}`.trim()).join(' / ')
+        : null)
+    || null;
+
+  // Forma farmacéutica: solo presente en /medicamentos
+  const formaFarmaceutica  = medPadre?.formaFarmaceutica?.nombre  || null;
+  const formaSimplificada  = medPadre?.formaFarmaceuticaSimplificada?.nombre || null;
+
+  // Vía de administración: array en /medicamentos, tomamos la primera
+  const primeraVia = (medPadre?.viasAdministracion || [])[0];
+  const viaAdministracion = primeraVia?.nombre || null;
+
+  // Laboratorio y prescripción: disponibles en ambos endpoints
+  const laboratorio       = item.labtitular || item.labcomercializador
+    || medPadre?.labtitular || medPadre?.labcomercializador
+    || null;
+  const tipoPrescripcion  = item.cpresc || medPadre?.cpresc || null;
 
   return {
-    cn:                 String(item.cn),              // PK — siempre presente (/presentaciones garantiza cn)
-    nregistro:          String(item.nregistro),       // referencia al medicamento padre
-    nombre:             item.nombre || '',             // nombre de la PRESENTACIÓN (incluye tamaño)
-    laboratorio:        item.labtitular || item.labcomercializador || medPadre?.labtitular || null,
-    dosis:              item.dosis || (item.principiosActivos ? item.principiosActivos.map(p => `${p.cantidad || ''} ${p.unidad || ''}`.trim()).join(' / ') : null),
-    principio_activo:   item.pactivos || item.vtm?.nombre || medPadre?.vtm?.nombre || null,
-    forma_farmaceutica: medPadre?.formaFarmaceutica?.nombre || item.formaFarmaceutica?.nombre || null,
-    forma_simplificada: medPadre?.formaFarmaceuticaSimplificada?.nombre || item.formaFarmaceuticaSimplificada?.nombre || null,
-    via_administracion: primeraVia?.nombre || null,
-    tipo_prescripcion:  item.cpresc || medPadre?.cpresc || null,
+    cn:                 String(item.cn),        // PK — código nacional del envase
+    nregistro:          String(item.nregistro), // FK al medicamento padre
+    nombre:             item.nombre || '',      // nombre completo del envase (incluye tamaño)
+    laboratorio,
+    dosis,
+    principio_activo:   principioActivo,
+    forma_farmaceutica: formaFarmaceutica,
+    forma_simplificada: formaSimplificada,
+    via_administracion: viaAdministracion,
+    tipo_prescripcion:  tipoPrescripcion,
     foto_envase_url:    fotoEnvase?.url || null,
     foto_forma_url:     fotoForma?.url  || null,
-    url_ficha_tecnica:  docFT?.url     || null,
+    url_ficha_tecnica:  docFT?.url      || null,
     url_prospecto:      docProspe?.url  || null,
     last_sync:          new Date().toISOString(),
   };
