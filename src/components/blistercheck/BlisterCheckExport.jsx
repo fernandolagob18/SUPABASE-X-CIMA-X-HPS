@@ -85,8 +85,11 @@ function downloadCsv(content, filename) {
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(link);
+  // Diferimos la revocación para que el navegador tenga tiempo de iniciar la descarga
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 function BlisterCheckExport({ onClose }) {

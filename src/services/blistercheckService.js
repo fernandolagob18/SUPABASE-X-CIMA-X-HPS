@@ -257,30 +257,36 @@ export async function getAllClasificaciones() {
  * Solo incluye laboratorios con al menos 1 medicamento clasificado
  */
 export async function getEstadisticasPorLaboratorio(soloMiFarmacia = false) {
-  // Consultamos desde CLASIFICACIÓN (pocos registros, no hay riesgo de límite de filas).
-  // El total "sin clasificar" global se muestra en la tarjeta de resumen (totalCatalogo - totalClasificados).
-  let query = supabase
-    .from(CLASIFICACION_TABLE)
-    .select(`
-      cn,
-      requiere_reenvasado,
-      requiere_reetiquetado,
-      apto_sdmdu_blister,
-      en_mi_farmacia,
-      blistercheck_catalogo ( laboratorio )
-    `);
+  // Paginamos para soportar más de 1000 clasificaciones (comentario anterior incorrecto)
+  let allData = [];
+  let page = 0;
+  const PAGE_SIZE = 1000;
 
-  if (soloMiFarmacia) {
-    query = query.eq('en_mi_farmacia', true);
+  while (true) {
+    let query = supabase
+      .from(CLASIFICACION_TABLE)
+      .select(`
+        cn,
+        requiere_reenvasado,
+        requiere_reetiquetado,
+        apto_sdmdu_blister,
+        en_mi_farmacia,
+        blistercheck_catalogo ( laboratorio )
+      `)
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+    if (soloMiFarmacia) query = query.eq('en_mi_farmacia', true);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    allData = allData.concat(data || []);
+    if ((data || []).length < PAGE_SIZE) break;
+    page++;
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
-
-  // Agrupar por laboratorio
   const labMap = new Map();
 
-  (data || []).forEach(row => {
+  allData.forEach(row => {
     const lab = row.blistercheck_catalogo?.laboratorio || 'Sin laboratorio';
     if (!labMap.has(lab)) {
       labMap.set(lab, {
@@ -318,32 +324,26 @@ export async function getEstadisticasPorLaboratorio(soloMiFarmacia = false) {
 // ─── INFO GENERAL DEL CATÁLOGO ────────────────────────────────────────────────
 
 export async function getCatalogInfo() {
-  const { count: totalCatalogo } = await supabase
-    .from(CATALOG_TABLE)
-    .select('*', { count: 'exact', head: true });
-
-  const { count: totalClasificados } = await supabase
-    .from(CLASIFICACION_TABLE)
-    .select('*', { count: 'exact', head: true })
-    .or('requiere_reenvasado.not.is.null,requiere_reetiquetado.not.is.null,apto_sdmdu_blister.not.is.null');
-
-  const { count: enMiFarmacia } = await supabase
-    .from(CLASIFICACION_TABLE)
-    .select('*', { count: 'exact', head: true })
-    .eq('en_mi_farmacia', true);
-
-  const { data: syncData } = await supabase
-    .from(CATALOG_TABLE)
-    .select('last_sync')
-    .order('last_sync', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // 4 consultas en paralelo en vez de secuenciales (era 4x más lento)
+  const [
+    { count: totalCatalogo },
+    { count: totalClasificados },
+    { count: enMiFarmacia },
+    { data: syncData },
+  ] = await Promise.all([
+    supabase.from(CATALOG_TABLE).select('*', { count: 'exact', head: true }),
+    supabase.from(CLASIFICACION_TABLE).select('*', { count: 'exact', head: true })
+      .or('requiere_reenvasado.not.is.null,requiere_reetiquetado.not.is.null,apto_sdmdu_blister.not.is.null'),
+    supabase.from(CLASIFICACION_TABLE).select('*', { count: 'exact', head: true })
+      .eq('en_mi_farmacia', true),
+    supabase.from(CATALOG_TABLE).select('last_sync').order('last_sync', { ascending: false }).limit(1).maybeSingle(),
+  ]);
 
   return {
-    totalCatalogo: totalCatalogo || 0,
+    totalCatalogo:     totalCatalogo     || 0,
     totalClasificados: totalClasificados || 0,
-    enMiFarmacia: enMiFarmacia || 0,
-    ultimaSync: syncData?.last_sync || null,
+    enMiFarmacia:      enMiFarmacia      || 0,
+    ultimaSync:        syncData?.last_sync || null,
   };
 }
 
@@ -479,13 +479,17 @@ export async function getDesabastecimientosByCNs(cns) {
   const validCNs = [...new Set(cns.filter(Boolean).map(cn => String(cn)))];
   if (validCNs.length === 0) return new Map();
 
-  const { data, error } = await supabase
-    .from('desabastecimientos_activos')
-    .select('*')
-    .in('cn', validCNs);
-
-  if (error) throw error;
+  // Chunking para no exceder el límite de PostgREST con .in() largo
+  const CHUNK_SIZE = 900;
   const map = new Map();
-  (data || []).forEach(row => map.set(String(row.cn), row));
+  for (let i = 0; i < validCNs.length; i += CHUNK_SIZE) {
+    const chunk = validCNs.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await supabase
+      .from('desabastecimientos_activos')
+      .select('*')
+      .in('cn', chunk);
+    if (error) throw error;
+    (data || []).forEach(row => map.set(String(row.cn), row));
+  }
   return map;
 }

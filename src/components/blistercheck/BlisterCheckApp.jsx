@@ -26,16 +26,23 @@ function BlisterCheckApp({ onVolver }) {
     setClasificacionActual(null);
     setDesabastecimientoActual(null);
     setVistaActiva('detail');
+
+    // Guard contra race condition: si el usuario cambia de medicamento rápido,
+    // solo aplicamos la respuesta de la última selección.
+    let isCurrent = true;
     try {
       const [clas, desab] = await Promise.all([
-        getClasificacion(medicamento.cn),              // clasificación por CN
-        getDesabastecimientoByCN(medicamento.cn),      // desabastecimiento por CN (directo)
+        getClasificacion(medicamento.cn),
+        getDesabastecimientoByCN(medicamento.cn),
       ]);
-      setClasificacionActual(clas);
-      setDesabastecimientoActual(desab);
+      if (isCurrent) {
+        setClasificacionActual(clas);
+        setDesabastecimientoActual(desab);
+      }
     } catch (err) {
       console.error('Error cargando datos del medicamento:', err);
     }
+    return () => { isCurrent = false; };
   }, []);
 
   const handleClasificacionGuardada = useCallback((nuevaClasificacion) => {
