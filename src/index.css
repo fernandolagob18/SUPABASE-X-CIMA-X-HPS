@@ -60,6 +60,13 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  #root {
+    padding: 1rem 0.5rem;
+  }
 }
 
 /* --- Clean Panel (formerly glass) --- */
@@ -88,6 +95,7 @@ body {
   justify-content: center;
   gap: 1rem;
   margin-bottom: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .icon-wrapper {
@@ -112,6 +120,19 @@ body {
   font-size: 1.1rem;
   font-weight: 500;
   margin: 0;
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .title {
+    font-size: 1.75rem;
+  }
+  .subtitle {
+    font-size: 0.95rem;
+  }
 }
 
 /* --- Filters --- */
@@ -167,6 +188,7 @@ body {
 .filter-toggles {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .toggle-btn {
@@ -196,9 +218,16 @@ body {
 /* --- Grid --- */
 .shortage-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+}
+
+@media (max-width: 400px) {
+  .shortage-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 /* --- Card --- */

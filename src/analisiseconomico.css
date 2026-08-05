@@ -41,9 +41,15 @@
 /* ── Submenú Interno ── */
 .ae-menu-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
   width: 100%;
+}
+
+@media (max-width: 400px) {
+  .ae-menu-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Zona de Carga (Drag & Drop) ── */
@@ -258,5 +264,20 @@
   .ae-error {
     background: rgba(239, 68, 68, 0.1);
     border-color: rgba(239, 68, 68, 0.2);
+  }
+}
+
+@media (max-width: 640px) {
+  .ae-header {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ae-upload-zone {
+    padding: 2rem 1rem;
+  }
+  .ae-summary-card {
+    min-width: 100%;
+    padding: 1rem;
   }
 }
