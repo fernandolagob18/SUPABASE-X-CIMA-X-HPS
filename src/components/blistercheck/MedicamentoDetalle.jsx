@@ -134,7 +134,8 @@ function MedicamentoDetalle({ medicamento, clasificacion, onClasificacionGuardad
       setTimeout(() => setSavedOk(false), 2000);
     } catch (err) {
       console.error('Error guardando clasificación:', err);
-      alert('Error al guardar. Por favor, inténtalo de nuevo.');
+      const msg = err?.message || err?.details || JSON.stringify(err);
+      alert(`Error al guardar: ${msg}`);
     } finally {
       setSaving(false);
     }
