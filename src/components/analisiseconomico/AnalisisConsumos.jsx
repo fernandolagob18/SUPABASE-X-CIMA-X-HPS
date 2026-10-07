@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { read, utils } from 'xlsx';
 import { Calculator, UploadCloud, RefreshCw, AlertCircle, Building2, Euro, ArrowLeft } from 'lucide-react';
 

@@ -46,7 +46,7 @@ function LoginScreen({ onLogin }) {
 
                 onLogin(data.session.user?.email || '');
             }
-        } catch (err) {
+        } catch {
             setError(true);
             setErrorMessage('Error al intentar acceder');
             setShaking(true);

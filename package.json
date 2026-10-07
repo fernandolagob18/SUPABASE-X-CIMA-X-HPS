@@ -1,7 +1,7 @@
 {
-  "name": "buscador-de-desabastecimientos",
+  "name": "hps-suite",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,8 +16,6 @@
     "lucide-react": "^0.574.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-virtualized-auto-sizer": "^2.0.3",
-    "react-window": "^2.2.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

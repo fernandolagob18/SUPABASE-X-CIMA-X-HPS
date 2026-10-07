@@ -167,7 +167,7 @@ function PedidosMinimosApp({ onVolver }) {
     try {
       const data = await getLaboratorios();
       setLaboratorios(data);
-    } catch (e) {
+    } catch {
       setError('Error al cargar los laboratorios. Comprueba tu conexión.');
     } finally {
       setLoading(false);

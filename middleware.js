@@ -32,7 +32,7 @@ export default async function middleware(request) {
     const url = new URL(request.url);
 
     // Rutas públicas que no requieren autenticación
-    const publicPaths = ['/api/psuministro', '/api/logout'];
+    const publicPaths = ['/api/logout'];
     if (publicPaths.some(path => url.pathname.startsWith(path))) {
         return;
     }
@@ -51,7 +51,7 @@ export default async function middleware(request) {
                 break;
             }
         }
-    } catch (_) {
+    } catch {
         authToken = null;
     }
 
